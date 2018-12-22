@@ -1,0 +1,21 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+click = "*"
+setuptools = "*"
+
+[dev-packages]
+"autopep8" = "*"
+"flake8" = "*"
+pytest = "*"
+rope = "*"
+"flake8-docstrings" = "*"
+"flake8-per-file-ignores" = "*"
+mypy = "*"
+"doc8" = "*"
+
+[requires]
+python_version = "3.7"
