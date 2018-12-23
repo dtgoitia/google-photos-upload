@@ -1,6 +1,5 @@
-# from multiprocessing import Process
 import os
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, url_for, request
 from flask_dance.contrib.google import make_google_blueprint, google
 from gpy.config import import_config
 
@@ -32,7 +31,24 @@ def set_up_flask_server():
             return redirect(url_for('google.login'))
         resp = google.get('/oauth2/v2/userinfo')
         assert resp.ok, resp.text
-        return f"You are {resp.json()['email']} on Google bleh!"
+        content = f"""
+        <div>You are {resp.json()['email']} on Google bleh!</div>
+        <a href="http://localhost:5000/shutdown">CLICK HERE TO CLOSE</a>
+        """
+        return content
+
+    def shutdown_server():
+        """Shutdown Flask server."""
+        func = request.environ.get('werkzeug.server.shutdown')
+        if func is None:
+            raise RuntimeError('Not running with the Werkzeug Server')
+        func()
+
+    @app.route('/shutdown')
+    def shutdown():
+        """Respond to the root view ('/shutdown')."""
+        shutdown_server()
+        return 'Server shutting down...'
 
     return app
 
@@ -42,3 +58,4 @@ def get_token():
     disable_https()
     app = set_up_flask_server()
     app.run()
+    return 'success!'
