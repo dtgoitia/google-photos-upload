@@ -1,4 +1,5 @@
 import click
+from gpy.oauth import get_token
 
 
 @click.group()
@@ -12,3 +13,6 @@ def main():
 def boo():
     """Shout 'Boo!' command description."""
     click.echo('boo')
+    result = get_token()
+    print(f'result = {result}')
+
