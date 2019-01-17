@@ -8,6 +8,7 @@ import click
 import datetime
 import re
 import subprocess
+from typing import Optional
 
 
 # def exiftool() -> None:
@@ -82,22 +83,27 @@ def parse_date_from_filename(file_path: str) -> datetime.datetime:
     return result
 
 
-def read_datetime(file_path: str):
+def read_datetime(file_path: str) -> Optional[str]:
     """Return Date/Time from file, if any."""
-    shell_instruction = f'exiftool -AllDates {file_path}'
+    shell_instruction = f'exiftool -AllDates "{file_path}"'
     completed_process = subprocess.run(shell_instruction, capture_output=True, shell=True)
 
     if completed_process.returncode is not 0:
-        error_message = f"Writting date and time to '{file_path}' >>> "
+        error_message = f"Reading date and time from '{file_path}' >>> "
         error_message += completed_process.stderr.decode('utf-8').rstrip('\n')
         click.echo(error_message)
-        return False
+        return None
 
+    # Extract timestamp and format it as 'YYYY-MM-DD hh:mm:ss'
     result = completed_process.stdout.decode('utf-8')
     result = result.split('\n')[0]
     result = result.split(':')[1:]
     result = ':'.join(result)
     result = result.strip()
+    result = result.split(' ')
+    result = (result[0].replace(':', '-'), result[1])
+    result = ' '.join(result)
+
     return result
 
 
@@ -156,7 +162,7 @@ def write_geolocation(file_path: str, *, north: float, west: float, no_backup: b
     :returns: true if successful, otherwise false
     :rtype: bool
     """
-    shell_instruction = f'exiftool -XMP:GPSLatitude="{north}" -XMP:GPSLongitude="{west}" -GPSLatitudeRef="North" -GPSLongitudeRef="West" {file_path}'
+    shell_instruction = f'exiftool -XMP:GPSLatitude="{north}" -XMP:GPSLongitude="{west}" -GPSLatitudeRef="North" -GPSLongitudeRef="West" {file_path}'  # noqa
     if no_backup:
         shell_instruction += ' -overwrite_original'
     completed_process = subprocess.run(shell_instruction, capture_output=True, shell=True)

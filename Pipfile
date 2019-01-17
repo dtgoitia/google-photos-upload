@@ -9,13 +9,14 @@ setuptools = "*"
 
 [dev-packages]
 "autopep8" = "*"
+"doc8" = "*"
 "flake8" = "*"
-pytest = "*"
-rope = "*"
 "flake8-docstrings" = "*"
 "flake8-per-file-ignores" = "*"
 mypy = "*"
-"doc8" = "*"
+pytest = "*"
+rope = "*"
+pytest-mock = "*"
 
 [requires]
 python_version = "3.7"
