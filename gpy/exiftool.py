@@ -84,7 +84,7 @@ def parse_date_from_filename(file_path: str) -> datetime.datetime:
 
 
 def read_datetime(file_path: str) -> Optional[str]:
-    """Return Date/Time from file, if any."""
+    """Return Date/Time from file, if any. Otherwise, return None."""
     shell_instruction = f'exiftool -AllDates "{file_path}"'
     completed_process = subprocess.run(shell_instruction, capture_output=True, shell=True)
 
