@@ -1,7 +1,9 @@
-from gpy.cli import get_paths_recursive, \
+from gpy.cli import compare_dates, \
+                    get_paths_recursive, \
                     is_supported, \
                     scan_date, \
                     scan_gps
+import datetime
 import os
 import pytest
 
@@ -32,7 +34,7 @@ def read_gps_mocked(mocker):
     return mocker.patch('gpy.cli.exif.read_gps')
 
 # -----------------------------------------------------------------------------
-# Tests
+# Unit tests
 
 
 @pytest.mark.parametrize(('file_path', 'output'), [
@@ -70,8 +72,18 @@ def test_get_paths_recursive_file(mock_dir):
 
 
 @pytest.mark.parametrize(('return_value', 'expected_result'), [
-    ('random_date', {'path': 'random_path', 'date': 'random_date'}),
-    (None, {'path': 'random_path'}),
+    ('random_date', {
+        'filename_date': None,
+        'match_date': False,
+        'metadata_date': None,
+        'path': 'random_path',
+    }),
+    (None, {
+        'filename_date': None,
+        'match_date': False,
+        'metadata_date': None,
+        'path': 'random_path',
+    }),
 ])
 def test_scan_date(read_datetime_mocked, return_value, expected_result):
     read_datetime_mocked.return_value = return_value
@@ -89,5 +101,25 @@ def test_scan_gps(read_gps_mocked, return_value, expected_result):
     read_gps_mocked.return_value = return_value
 
     actual_result = scan_gps(file_path='random_path')
+
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(('date_a', 'date_b', 'expected_result'), [
+    (
+        datetime.datetime(2018, 12, 12, 1, 1, 1, 1),
+        datetime.datetime(2018, 12, 12, 1, 1, 1, 2),
+        False
+    ),
+    (
+        datetime.datetime(2018, 12, 12, 1, 1, 1, 1),
+        datetime.datetime(2018, 12, 12, 1, 1, 1, 1),
+        True
+    ),
+    (None, datetime.datetime(2018, 12, 12, 1, 1, 1, 1), False),
+    (None, None, False),
+])
+def test_compare_dates(date_a, date_b, expected_result):
+    actual_result = compare_dates(date_a, date_b)
 
     assert actual_result == expected_result

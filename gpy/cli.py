@@ -3,7 +3,7 @@ import datetime
 import gpy.exiftool as exif
 import os
 from gpy.filenames import parse
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, Optional
 
 
 @click.group()
@@ -72,13 +72,28 @@ def scan_date(file_path) -> Dict[str, Any]:
     log(f'scanning {file_path}', fg='bright_black')
     report = {'path': file_path}
     metadata_date = exif.read_datetime(file_path)
-    if metadata_date:
-        report['metadata_date'] = datetime.datetime.strptime(metadata_date, '%Y-%m-%d %H:%M:%S')
-    else:
+    filename_date = parse(os.path.basename(file_path))
+    ts = None
+    try:
+        ts = datetime.datetime.strptime(metadata_date, '%Y-%m-%d %H:%M:%S')  # type: ignore
+        report['metadata_date'] = ts
+    except Exception:
         report['metadata_date'] = None
-    report['filename_date'] = parse(os.path.basename(file_path))
-    report['match_date'] = report['metadata_date'] == report['filename_date']
+    report['filename_date'] = filename_date
+    report['match_date'] = compare_dates(filename_date, ts)
     return report
+
+
+def compare_dates(a: Optional[datetime.datetime], b: Optional[datetime.datetime]) -> bool:
+    """Check wheather the datetimes are the same or not.
+
+    This function returns False if any of the datetimes is None.
+    """
+    if (a is None) or (b is None):
+        return False
+    if a == b:
+        return True
+    return False
 
 
 def scan_gps(file_path) -> dict:
