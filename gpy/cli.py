@@ -111,7 +111,6 @@ def print_report(report: dict) -> None:
     match = report['match_date']
     if match is False:
         log(f"    metadata date and file timestamp don't match")
-    pass
 
 
 def log(s: str, fg=None):
