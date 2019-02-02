@@ -1,7 +1,9 @@
 import click
+import datetime
 import gpy.exiftool as exif
 import os
-from typing import Iterable
+from gpy.filenames import parse
+from typing import Any, Dict, Iterable
 
 
 @click.group()
@@ -27,12 +29,9 @@ def date(path):
      - GPS tag: the supported file does/doesn't have GPS tag.
     """
     file_paths = get_paths_recursive(root_path=path)
-    reports = []
     for file_path in file_paths:
         report = scan_date(file_path)
-    #     print_report(report)
-    #     reports.append(report)
-    # scanned_file_amount = len(reports)
+        print_report(report)
 
 
 def is_supported(file_path: str) -> bool:
@@ -68,13 +67,17 @@ def get_paths_recursive(*, root_path) -> Iterable[str]:
         yield root_path
 
 
-def scan_date(file_path) -> dict:
+def scan_date(file_path) -> Dict[str, Any]:
     """Scan file date and time metadata."""
     log(f'scanning {file_path}', fg='bright_black')
     report = {'path': file_path}
-    date = exif.read_datetime(file_path)
-    if date is not None:
-        report['date'] = date
+    metadata_date = exif.read_datetime(file_path)
+    if metadata_date:
+        report['metadata_date'] = datetime.datetime.strptime(metadata_date, '%Y-%m-%d %H:%M:%S')
+    else:
+        report['metadata_date'] = None
+    report['filename_date'] = parse(os.path.basename(file_path))
+    report['match_date'] = report['metadata_date'] == report['filename_date']
     return report
 
 
@@ -90,12 +93,10 @@ def scan_gps(file_path) -> dict:
 
 def print_report(report: dict) -> None:
     """Print on screen a report dictionary."""
-    result = report['path']
-    if report.get('date'):
-        result += f"  date={report['date']}"
-    if report.get('gps'):
-        result += f"  gps={report['gps']}"
-    log(result)
+    match = report['match_date']
+    if match is False:
+        log(f"    metadata date and file timestamp don't match")
+    pass
 
 
 def log(s: str, fg=None):
@@ -106,7 +107,7 @@ def log(s: str, fg=None):
 @main.command()
 @click.option('--clean-all', is_flag=True, default=False, help='remove all metadata')
 @click.option('--no-backup', is_flag=True, default=False, help='do not keep a backup copy of the edited file')
-@click.option('--parse-date', is_flag=True, default=False, help='write date to metadata from file name')
+@click.option('--parse-filename', is_flag=True, default=False, help='write date to metadata from file name')
 @click.argument('path', type=click.Path(exists=True))
 def meta(clean_all, no_backup, parse_date, path):
     """Read and write file metadata."""
@@ -142,3 +143,7 @@ def meta_recursive(clean_all, no_backup, parse_date, path):
 #        - Filename and metadata match, +GPS -> OK
 #        - If no GPS metadata -> Add '_nogps' at the end of the filename
 #        - Filename and metadata don't match ->
+
+
+if __name__ == "__main__":
+    main(['scan', 'date', '.'])
