@@ -1,9 +1,10 @@
 """This module contains the logic to parse dates from file names."""
 import datetime
 import re
+from typing import Optional
 
 
-def parse(file_name: str) -> datetime.datetime:
+def parse(file_name: str) -> Optional[datetime.datetime]:
     """Return timestamp from file name."""
     case_1 = parse_case_1(file_name)
     if case_1:
@@ -18,7 +19,7 @@ def parse(file_name: str) -> datetime.datetime:
     return None
 
 
-def parse_case_1(file_name: str) -> datetime.datetime:
+def parse_case_1(file_name: str) -> Optional[datetime.datetime]:
     """Return timestamp from file name.
 
     IMG_YYYYMMDD_hhmmss_XXX.jpg, where XXX is a counter
@@ -36,7 +37,7 @@ def parse_case_1(file_name: str) -> datetime.datetime:
     return datetime.datetime(year, month, day, h, m, s)
 
 
-def parse_case_2(file_name: str) -> datetime.datetime:
+def parse_case_2(file_name: str) -> Optional[datetime.datetime]:
     """Return timestamp from file name.
 
     IMG-YYYYMMDD-WAXXXX.jpeg, where XXXX is a counter
@@ -51,7 +52,7 @@ def parse_case_2(file_name: str) -> datetime.datetime:
     return datetime.datetime(year, month, day)
 
 
-def parse_case_3(file_name: str) -> datetime.datetime:
+def parse_case_3(file_name: str) -> Optional[datetime.datetime]:
     """Return timestamp from file name.
 
     VID-YYYYMMDD-WAXXXX.mp4, where XXXX is a counter
