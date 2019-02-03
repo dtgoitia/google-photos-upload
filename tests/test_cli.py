@@ -3,7 +3,8 @@ from gpy.cli import compare_dates, \
                     get_paths_recursive, \
                     is_supported, \
                     scan_date, \
-                    scan_gps
+                    scan_gps, \
+                    try_to_parse_date
 import os
 import pytest
 
@@ -23,6 +24,11 @@ def mock_dir(tmpdir) -> str:
     d1.join('file_6.mp4').write('file content 6\n')
 
     return os.path.join(tmpdir.dirname, tmpdir.basename)
+
+
+@pytest.fixture
+def parse_mocked(mocker):
+    return mocker.patch('gpy.cli.parse')
 
 
 @pytest.fixture
@@ -73,24 +79,75 @@ def test_get_paths_recursive_file(mock_dir):
     assert actual_paths == expected_paths
 
 
-@pytest.mark.parametrize(('return_value', 'expected_result'), [
-    ('random_date', {
-        'filename_date': None,
-        'match_date': False,
-        'metadata_date': None,
-        'path': 'random_path',
-    }),
-    (None, {
-        'filename_date': None,
-        'match_date': False,
-        'metadata_date': None,
-        'path': 'random_path',
-    }),
-])
-def test_scan_date(read_datetime_mocked, return_value, expected_result):
-    read_datetime_mocked.return_value = return_value
+@pytest.mark.parametrize(
+    ('path', 'read_datetime_return', 'parse_return', 'expected_result'), [
+        # Filename has no date, no metadata or broken
+        ('blah/foo.mp4', None, None, {
+            'filename_date': None,
+            'match_date': False,
+            'metadata_date': None,
+            'path': 'blah/foo.mp4',
+        }),
+        # Filename has no date, metadata OK found
+        ('blah/foo.mp4', '2010-01-01 16:01:01', None, {
+            'filename_date': None,
+            'match_date': False,
+            'metadata_date': datetime.datetime(2010, 1, 1, 16, 1, 1),
+            'path': 'blah/foo.mp4',
+        }),
+        # Filename parsed OK, but no metadata or broken
+        ('blah/VID_20100101_160101_123.mp4', None, datetime.datetime(2010, 1, 1, 16, 1, 1), {
+            'filename_date': datetime.datetime(2010, 1, 1, 16, 1, 1),
+            'match_date': False,
+            'metadata_date': None,
+            'path': 'blah/VID_20100101_160101_123.mp4',
+        }),
+        # Filename parsed OK, metadata OK found, but no match
+        ('blah/VID_20100101_160101_123.mp4', '2012-02-02 17:02:02', datetime.datetime(2010, 1, 1, 16, 1, 1), {
+            'filename_date': datetime.datetime(2010, 1, 1, 16, 1, 1),
+            'match_date': False,
+            'metadata_date': datetime.datetime(2012, 2, 2, 17, 2, 2),
+            'path': 'blah/VID_20100101_160101_123.mp4',
+        }),
+        # Filename parsed OK, metadata OK found, and both match
+        ('blah/VID_20100101_160101_123.mp4', '2010-01-01 16:01:01', datetime.datetime(2010, 1, 1, 16, 1, 1), {
+            'filename_date': datetime.datetime(2010, 1, 1, 16, 1, 1),
+            'match_date': True,
+            'metadata_date': datetime.datetime(2010, 1, 1, 16, 1, 1),
+            'path': 'blah/VID_20100101_160101_123.mp4',
+        }),
+        # Filename parsed OK, metadata OK found with timezone +0h, and both match
+        ('blah/VID_20100101_160101_123.mp4', '2010-01-01 16:01:01.00+00.00', datetime.datetime(2010, 1, 1, 16, 1, 1), {
+            'filename_date': datetime.datetime(2010, 1, 1, 16, 1, 1),
+            'match_date': True,
+            'metadata_date': datetime.datetime(2010, 1, 1, 16, 1, 1),
+            'path': 'blah/VID_20100101_160101_123.mp4',
+        }),
+        # Filename parsed OK, metadata OK found with timezone +5h, and both match
+        ('blah/VID_20100101_160101_123.mp4', '2010-01-01 16:01:01.00+05.00', datetime.datetime(2010, 1, 1, 16, 1, 1), {
+            'filename_date': datetime.datetime(2010, 1, 1, 16, 1, 1),
+            'match_date': True,
+            'metadata_date': datetime.datetime(2010, 1, 1, 16, 1, 1),
+            'path': 'blah/VID_20100101_160101_123.mp4',
+        }),
+    ])
+def test_scan_date(read_datetime_mocked, parse_mocked, path, read_datetime_return, parse_return, expected_result):
+    read_datetime_mocked.return_value = read_datetime_return
+    parse_mocked.return_value = parse_return
 
-    actual_result = scan_date(file_path='random_path')
+    actual_result = scan_date(file_path=path)
+
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(('text', 'expected_result'), [
+    (None, None),
+    ('blah', None),
+    ('2010-01-01 16:01:01', datetime.datetime(2010, 1, 1, 16, 1, 1)),
+    ('2010-01-01 16:01:01.00+00.00', datetime.datetime(2010, 1, 1, 16, 1, 1)),
+])
+def test_try_to_parse_date(text, expected_result):
+    actual_result = try_to_parse_date(text)
 
     assert actual_result == expected_result
 

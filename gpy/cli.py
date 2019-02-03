@@ -3,6 +3,7 @@ import datetime
 from gpy import exiftool
 from gpy.filenames import parse
 import os
+import re
 from typing import Any, Dict, Iterable, Optional
 
 
@@ -72,17 +73,56 @@ def scan_date(file_path: str) -> Dict[str, Any]:
     """Scan file date and time metadata."""
     log(f'scanning {file_path}', fg='bright_black')
     report = {'path': file_path}  # type: Dict[str, Any]
-    metadata_date = exiftool.read_datetime(file_path)
     filename_date = parse(os.path.basename(file_path))
-    ts = None
-    try:
-        ts = datetime.datetime.strptime(metadata_date, '%Y-%m-%d %H:%M:%S')  # type: ignore
-        report['metadata_date'] = ts
-    except Exception:
-        report['metadata_date'] = None
+    metadata_date_string = exiftool.read_datetime(file_path)
+    metadata_date = try_to_parse_date(metadata_date_string)
     report['filename_date'] = filename_date
-    report['match_date'] = compare_dates(filename_date, ts)
+    report['metadata_date'] = metadata_date
+    report['match_date'] = compare_dates(filename_date, metadata_date)
     return report
+
+
+def try_to_parse_date(text: Optional[str]) -> Optional[datetime.datetime]:
+    """Parse the date with multiple formats and return the first match."""
+    if not text:
+        return None
+    case_1 = try_to_parse_date_1(text)
+    if case_1:
+        return case_1
+    case_2 = try_to_parse_date_2(text)
+    if case_2:
+        return case_2
+    return None
+
+
+def try_to_parse_date_1(text: str) -> Optional[datetime.datetime]:
+    """Try to parse text to date (2019-02-02 18:45:13)."""
+    pattern = r'([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})'
+    matches = re.match(pattern, text)
+    if matches is None:
+        return None
+    year = int(matches.group(1))
+    month = int(matches.group(2))
+    day = int(matches.group(3))
+    h = int(matches.group(4))
+    m = int(matches.group(5))
+    s = int(matches.group(6))
+    return datetime.datetime(year, month, day, h, m, s)
+
+
+def try_to_parse_date_2(text: str) -> Optional[datetime.datetime]:
+    """Try to parse text to date (2019-02-02 18:45:13.00+00:00)."""
+    pattern = r'([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2}).[0-9]{2}\+[0-9]{2}:[0-9]{2}'
+    matches = re.match(pattern, text)
+    if matches is None:
+        return None
+    year = int(matches.group(1))
+    month = int(matches.group(2))
+    day = int(matches.group(3))
+    h = int(matches.group(4))
+    m = int(matches.group(5))
+    s = int(matches.group(6))
+    return datetime.datetime(year, month, day, h, m, s)
 
 
 def scan_gps(file_path) -> dict:
@@ -107,11 +147,13 @@ def compare_dates(a: Optional[datetime.datetime], b: Optional[datetime.datetime]
     return False
 
 
-def edit_date(file_path: str, date: datetime.datetime):
+def edit_date(file_path: str, ts: datetime.datetime):
     """Write date and time to file metadata."""
-    formatted_date = date.strftime(DATETIME_FORMAT)
-    log(f'writting date {formatted_date} as metadata to {file_path}', fg='bright_black')
-    pass
+    formatted_date = ts.strftime(DATETIME_FORMAT)
+    log(f'writing date {formatted_date} as metadata to {file_path}', fg='bright_black')
+    file_is_updated = exiftool.write_datetime(file_path, ts=ts)
+    if not file_is_updated:
+        log('IT WAS NOT POSSIBLE')
 
 
 def input_to_datetime(input: str) -> Optional[datetime.datetime]:
