@@ -7,9 +7,6 @@ import re
 from typing import Any, Dict, Iterable, Optional
 
 
-DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
-
-
 @click.group()
 def main():
     """Entry point."""
@@ -46,12 +43,13 @@ def gyp_scan_date(path):
 
 @meta.command(name='date')
 # @click.option('--clean-all', is_flag=True, default=False, help='remove all metadata')
-# @click.option('--no-backup', is_flag=True, default=False, help='do not keep a backup copy of the edited file')
+@click.option('--no-backup', is_flag=True, default=False, help='do not keep a backup copy of the edited file')
+# @click.option('--timezone', default=0, help='')  # TODO
 @click.option('--from-filename', is_flag=True, default=False, help='write date to metadata from file name')
-@click.option('--input', help='manually input date and time (YYYY-MM-DD hh:mm:ss)')
+@click.option('--input', help='manually input date and time (YYYY-MM-DD_hh:mm:ss)')
 @click.argument('path', type=click.Path(exists=True))
 # def date(clean_all, no_backup, from_filename, path):
-def cmd_meta_date(from_filename: bool, path: str, input: Optional[str]):
+def cmd_meta_date(path: str, from_filename: bool, input: Optional[str], no_backup: bool):
     """Edit file metadata date and time."""
     file_paths = get_paths_recursive(root_path=path)
     meta_date = None
@@ -66,7 +64,7 @@ def cmd_meta_date(from_filename: bool, path: str, input: Optional[str]):
             filename_date = parse(os.path.basename(file_path))
             meta_date = filename_date
         if meta_date:
-            edit_date(file_path, meta_date)
+            edit_date(file_path, meta_date, no_backup)
 
 
 def scan_date(file_path: str) -> Dict[str, Any]:
@@ -147,11 +145,11 @@ def compare_dates(a: Optional[datetime.datetime], b: Optional[datetime.datetime]
     return False
 
 
-def edit_date(file_path: str, ts: datetime.datetime):
+def edit_date(file_path: str, ts: datetime.datetime, no_backup: bool):
     """Write date and time to file metadata."""
-    formatted_date = ts.strftime(DATETIME_FORMAT)
+    formatted_date = ts.strftime('%Y-%m-%d %H:%M:%S')
     log(f'writing date {formatted_date} as metadata to {file_path}', fg='bright_black')
-    file_is_updated = exiftool.write_datetime(file_path, ts=ts)
+    file_is_updated = exiftool.write_datetime(file_path, ts=ts, no_backup=no_backup)
     if not file_is_updated:
         log('IT WAS NOT POSSIBLE')
 
@@ -162,7 +160,7 @@ def input_to_datetime(input: str) -> Optional[datetime.datetime]:
     If unsuccessful, log a meaningful message.
     """
     try:
-        return datetime.datetime.strptime(input, DATETIME_FORMAT)
+        return datetime.datetime.strptime(input, '%Y-%m-%d_%H:%M:%S')
     except Exception:
         log(f"ERROR: provided input doesn't have the required format ()")
         return None
