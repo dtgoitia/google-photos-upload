@@ -1,9 +1,12 @@
 import click
 import datetime
-import gpy.exiftool as exif
-import os
+from gpy import exiftool
 from gpy.filenames import parse
+import os
 from typing import Any, Dict, Iterable, Optional
+
+
+DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
 @click.group()
@@ -18,9 +21,15 @@ def scan():
     pass
 
 
-@scan.command()
+@main.group()
+def meta():
+    """Edit file metadata."""
+    pass
+
+
+@scan.command(name='date')
 @click.argument('path', type=click.Path(exists=True))
-def date(path):
+def gyp_scan_date(path):
     """Scan files and directories.
 
     Scan files and directories looking and report:
@@ -32,6 +41,89 @@ def date(path):
     for file_path in file_paths:
         report = scan_date(file_path)
         print_report(report)
+
+
+@meta.command(name='date')
+# @click.option('--clean-all', is_flag=True, default=False, help='remove all metadata')
+# @click.option('--no-backup', is_flag=True, default=False, help='do not keep a backup copy of the edited file')
+@click.option('--from-filename', is_flag=True, default=False, help='write date to metadata from file name')
+@click.option('--input', help='manually input date and time (YYYY-MM-DD hh:mm:ss)')
+@click.argument('path', type=click.Path(exists=True))
+# def date(clean_all, no_backup, from_filename, path):
+def cmd_meta_date(from_filename: bool, path: str, input: Optional[str]):
+    """Edit file metadata date and time."""
+    file_paths = get_paths_recursive(root_path=path)
+    meta_date = None
+    if input and from_filename:
+        log("ORDER CONFLICT. Which date should I use? The date you've input or the file name one?")
+        return
+    if input:
+        meta_date = input_to_datetime(input)
+
+    for file_path in file_paths:
+        if input is None and from_filename:
+            filename_date = parse(os.path.basename(file_path))
+            meta_date = filename_date
+        if meta_date:
+            edit_date(file_path, meta_date)
+
+
+def scan_date(file_path: str) -> Dict[str, Any]:
+    """Scan file date and time metadata."""
+    log(f'scanning {file_path}', fg='bright_black')
+    report = {'path': file_path}  # type: Dict[str, Any]
+    metadata_date = exiftool.read_datetime(file_path)
+    filename_date = parse(os.path.basename(file_path))
+    ts = None
+    try:
+        ts = datetime.datetime.strptime(metadata_date, '%Y-%m-%d %H:%M:%S')  # type: ignore
+        report['metadata_date'] = ts
+    except Exception:
+        report['metadata_date'] = None
+    report['filename_date'] = filename_date
+    report['match_date'] = compare_dates(filename_date, ts)
+    return report
+
+
+def scan_gps(file_path) -> dict:
+    """Scan file geolocation related metadata."""
+    log(f'scanning {file_path}', fg='bright_black')
+    report = {'path': file_path}
+    gps = exiftool.read_gps(file_path)
+    if gps is not None:
+        report['gps'] = gps
+    return report
+
+
+def compare_dates(a: Optional[datetime.datetime], b: Optional[datetime.datetime]) -> bool:
+    """Check wheather the datetimes are the same or not.
+
+    This function returns False if any of the datetimes is None.
+    """
+    if (a is None) or (b is None):
+        return False
+    if a == b:
+        return True
+    return False
+
+
+def edit_date(file_path: str, date: datetime.datetime):
+    """Write date and time to file metadata."""
+    formatted_date = date.strftime(DATETIME_FORMAT)
+    log(f'writting date {formatted_date} as metadata to {file_path}', fg='bright_black')
+    pass
+
+
+def input_to_datetime(input: str) -> Optional[datetime.datetime]:
+    """Try to parse input string to a datetime.datetime object.
+
+    If unsuccessful, log a meaningful message.
+    """
+    try:
+        return datetime.datetime.strptime(input, DATETIME_FORMAT)
+    except Exception:
+        log(f"ERROR: provided input doesn't have the required format ()")
+        return None
 
 
 def is_supported(file_path: str) -> bool:
@@ -67,45 +159,6 @@ def get_paths_recursive(*, root_path) -> Iterable[str]:
         yield root_path
 
 
-def scan_date(file_path) -> Dict[str, Any]:
-    """Scan file date and time metadata."""
-    log(f'scanning {file_path}', fg='bright_black')
-    report = {'path': file_path}
-    metadata_date = exif.read_datetime(file_path)
-    filename_date = parse(os.path.basename(file_path))
-    ts = None
-    try:
-        ts = datetime.datetime.strptime(metadata_date, '%Y-%m-%d %H:%M:%S')  # type: ignore
-        report['metadata_date'] = ts
-    except Exception:
-        report['metadata_date'] = None
-    report['filename_date'] = filename_date
-    report['match_date'] = compare_dates(filename_date, ts)
-    return report
-
-
-def compare_dates(a: Optional[datetime.datetime], b: Optional[datetime.datetime]) -> bool:
-    """Check wheather the datetimes are the same or not.
-
-    This function returns False if any of the datetimes is None.
-    """
-    if (a is None) or (b is None):
-        return False
-    if a == b:
-        return True
-    return False
-
-
-def scan_gps(file_path) -> dict:
-    """Scan file geolocation related metadata."""
-    log(f'scanning {file_path}', fg='bright_black')
-    report = {'path': file_path}
-    gps = exif.read_gps(file_path)
-    if gps is not None:
-        report['gps'] = gps
-    return report
-
-
 def print_report(report: dict) -> None:
     """Print on screen a report dictionary."""
     match = report['match_date']
@@ -118,35 +171,6 @@ def log(s: str, fg=None):
     click.echo(click.style(s, fg=fg))
 
 
-@main.command()
-@click.option('--clean-all', is_flag=True, default=False, help='remove all metadata')
-@click.option('--no-backup', is_flag=True, default=False, help='do not keep a backup copy of the edited file')
-@click.option('--parse-filename', is_flag=True, default=False, help='write date to metadata from file name')
-@click.argument('path', type=click.Path(exists=True))
-def meta(clean_all, no_backup, parse_date, path):
-    """Read and write file metadata."""
-    meta_recursive(clean_all, no_backup, parse_date, path)
-    # TODO: add option to scan directory and return a list of filenames which are missing either GPS or dates
-
-
-def meta_recursive(clean_all, no_backup, parse_date, path):
-    """Recursivelly manage metadata in directories and files."""
-    if os.path.isdir(path):
-        log(f'directory found {path}...', fg='bright_black')
-        paths = [os.path.join(path, x) for x in os.listdir(path)]
-        [meta_recursive(clean_all, no_backup, parse_date, p) for p in paths]
-        return
-    file_path = path
-    log(f'processing {file_path}', fg='bright_black')
-    if clean_all:
-        log(f"Removing all metadata from '{file_path}' file...", fg='bright_black')
-        exif.clean_metadata(file_path, no_backup=no_backup)
-    if parse_date:
-        log(f"Extracting date and time from '{file_path}' file name...", fg='bright_black')
-        date = exif.parse_date_from_filename(file_path)
-        log(f"Writing dateTime tag to '{file_path}' file...", fg='bright_black')
-        exif.write_datetime(file_path, ts=date, no_backup=no_backup)
-
 # TODO:
 # Add more regex patterns to recognize more image file names and ensure the date
 # Create one command that will:
@@ -157,7 +181,3 @@ def meta_recursive(clean_all, no_backup, parse_date, path):
 #        - Filename and metadata match, +GPS -> OK
 #        - If no GPS metadata -> Add '_nogps' at the end of the filename
 #        - Filename and metadata don't match ->
-
-
-if __name__ == "__main__":
-    main(['scan', 'date', '.'])

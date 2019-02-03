@@ -1,15 +1,16 @@
+import datetime
 from gpy.cli import compare_dates, \
                     get_paths_recursive, \
                     is_supported, \
                     scan_date, \
                     scan_gps
-import datetime
 import os
 import pytest
 
 
 # -----------------------------------------------------------------------------
 # Fixtures
+
 
 @pytest.fixture
 def mock_dir(tmpdir) -> str:
@@ -26,12 +27,13 @@ def mock_dir(tmpdir) -> str:
 
 @pytest.fixture
 def read_datetime_mocked(mocker):
-    return mocker.patch('gpy.cli.exif.read_datetime')
+    return mocker.patch('gpy.cli.exiftool.read_datetime')
 
 
 @pytest.fixture
 def read_gps_mocked(mocker):
-    return mocker.patch('gpy.cli.exif.read_gps')
+    return mocker.patch('gpy.cli.exiftool.read_gps')
+
 
 # -----------------------------------------------------------------------------
 # Unit tests
