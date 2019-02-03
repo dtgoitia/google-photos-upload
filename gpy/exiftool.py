@@ -32,7 +32,7 @@ def clean_metadata(file_path: str, no_backup=False) -> bool:
     completed_process = subprocess.run(shell_instruction, capture_output=True, shell=True)
 
     if completed_process.returncode is not 0:
-        error_message = f"Writting date and time to '{file_path}' >>> "
+        error_message = f"Writing date and time to '{file_path}' >>> "
         error_message += completed_process.stderr.decode('utf-8').rstrip('\n')
         click.echo(error_message)
         return False
@@ -141,7 +141,7 @@ def write_datetime(file_path: str, *, ts: datetime.datetime, timezone=0, no_back
     completed_process = subprocess.run(shell_instruction, capture_output=True, shell=True)
 
     if completed_process.returncode is not 0:
-        error_message = f"Writting date and time to '{file_path}' >>> "
+        error_message = f"Writing date and time to '{file_path}' >>> "
         error_message += completed_process.stderr.decode('utf-8').rstrip('\n')
         click.echo(error_message)
         return False
@@ -168,7 +168,7 @@ def write_geolocation(file_path: str, *, north: float, west: float, no_backup: b
     completed_process = subprocess.run(shell_instruction, capture_output=True, shell=True)
 
     if completed_process.returncode is not 0:
-        error_message = f"Writting GPS coordinates to '{file_path}' >>> "
+        error_message = f"Writing GPS coordinates to '{file_path}' >>> "
         error_message += completed_process.stderr.decode('utf-8').rstrip('\n')
         click.echo(error_message)
         return False
