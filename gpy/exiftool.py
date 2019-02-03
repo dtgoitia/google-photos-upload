@@ -128,10 +128,9 @@ def write_datetime(file_path: str, *, ts: datetime.datetime, timezone=0, no_back
     :returns: true if successful, otherwise false
     :rtype: bool
     """
-    date_time = ts.strftime('%Y:%m:%d %H:%M:%S')
-    ms = ts.microsecond
+    date_time = ts.strftime('%Y:%m:%d %H:%M:%S.%f')[:-4]
     tz = format_tz(timezone)
-    formatted_date_time = f"{date_time}.{ms:02}{tz}"
+    formatted_date_time = f"{date_time}{tz}"
 
     shell_instruction = f'exiftool'
     shell_instruction += f' -AllDates="{formatted_date_time}"'

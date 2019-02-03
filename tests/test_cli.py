@@ -1,6 +1,7 @@
 import datetime
 from gpy.cli import compare_dates, \
                     get_paths_recursive, \
+                    input_to_datetime, \
                     is_supported, \
                     scan_date, \
                     scan_gps, \
@@ -180,5 +181,17 @@ def test_scan_gps(read_gps_mocked, return_value, expected_result):
 ])
 def test_compare_dates(date_a, date_b, expected_result):
     actual_result = compare_dates(date_a, date_b)
+
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(('input', 'expected_result'), [
+    ('blah', None),
+    ('2010-01-01 16:01:01', None),
+    ('2010-01-01_16:01:01', datetime.datetime(2010, 1, 1, 16, 1, 1)),
+    ('2010-01-01_16:01:01.02', datetime.datetime(2010, 1, 1, 16, 1, 1, 20000)),
+])
+def test_input_to_datetime(input, expected_result):
+    actual_result = input_to_datetime(input)
 
     assert actual_result == expected_result

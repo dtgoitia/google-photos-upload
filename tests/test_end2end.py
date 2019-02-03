@@ -13,7 +13,6 @@ Requirements:
 from click.testing import CliRunner
 from gpy import cli
 import os
-import pytest
 
 
 def test_gpy_scan_date_single(tmp_real_img):
@@ -130,10 +129,10 @@ def test_gpy_meta_date_input_single(tmp_real_img):
     """Set metadata date and time from user input for a single file."""
     runner = CliRunner()
 
-    result = runner.invoke(cli.main, ['meta', 'date', '--input=2010-01-01_00:00:00', tmp_real_img])
+    result = runner.invoke(cli.main, ['meta', 'date', '--input=2010-01-01_00:00:00.01', tmp_real_img])
 
     assert result.exit_code == 0
-    assert result.output == f'writing date 2010-01-01 00:00:00 as metadata to {tmp_real_img}\n'
+    assert result.output == f'writing date 2010-01-01 00:00:00.010 as metadata to {tmp_real_img}\n'
 
 
 def test_gpy_meta_date_nobackup_single(tmp_real_img):

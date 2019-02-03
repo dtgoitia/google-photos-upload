@@ -46,7 +46,7 @@ def gyp_scan_date(path):
 @click.option('--no-backup', is_flag=True, default=False, help='do not keep a backup copy of the edited file')
 # @click.option('--timezone', default=0, help='')  # TODO
 @click.option('--from-filename', is_flag=True, default=False, help='write date to metadata from file name')
-@click.option('--input', help='manually input date and time (YYYY-MM-DD_hh:mm:ss)')
+@click.option('--input', help='manually input date and time (YYYY-MM-DD_hh:mm:ss.ms)')
 @click.argument('path', type=click.Path(exists=True))
 # def date(clean_all, no_backup, from_filename, path):
 def cmd_meta_date(path: str, from_filename: bool, input: Optional[str], no_backup: bool):
@@ -147,7 +147,7 @@ def compare_dates(a: Optional[datetime.datetime], b: Optional[datetime.datetime]
 
 def edit_date(file_path: str, ts: datetime.datetime, no_backup: bool):
     """Write date and time to file metadata."""
-    formatted_date = ts.strftime('%Y-%m-%d %H:%M:%S')
+    formatted_date = ts.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
     log(f'writing date {formatted_date} as metadata to {file_path}', fg='bright_black')
     file_is_updated = exiftool.write_datetime(file_path, ts=ts, no_backup=no_backup)
     if not file_is_updated:
@@ -159,11 +159,13 @@ def input_to_datetime(input: str) -> Optional[datetime.datetime]:
 
     If unsuccessful, log a meaningful message.
     """
-    try:
-        return datetime.datetime.strptime(input, '%Y-%m-%d_%H:%M:%S')
-    except Exception:
-        log(f"ERROR: provided input doesn't have the required format ()")
-        return None
+    for fmt in ('%Y-%m-%d_%H:%M:%S', '%Y-%m-%d_%H:%M:%S.%f'):
+        try:
+            return datetime.datetime.strptime(input, fmt)
+        except Exception:
+            pass
+    log(f"ERROR: provided input doesn't have the required format (YYYY-MM-DD_hh:mm:ss.ms)")
+    return None
 
 
 def is_supported(file_path: str) -> bool:
