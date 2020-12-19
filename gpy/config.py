@@ -1,8 +1,9 @@
 import json
 import os
 
-
-CONFIG_FILE_PATH = os.path.join(os.path.expanduser('~'), '.config', 'gpy', 'config.json')
+CONFIG_FILE_PATH = os.path.join(
+    os.path.expanduser("~"), ".config", "gpy", "config.json"
+)
 
 
 def import_config(path=CONFIG_FILE_PATH):

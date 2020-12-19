@@ -27,7 +27,7 @@ def parse_case_1(file_name: str) -> Optional[datetime.datetime]:
 
     IMG_YYYYMMDD_hhmmss_XXX.jpg, where XXX is a counter
     """
-    pattern = r'IMG_([0-9]{4})([0-9]{2})([0-9]{2})_([0-9]{2})([0-9]{2})([0-9]{2})_[0-9]{3}.jpg'
+    pattern = r"IMG_([0-9]{4})([0-9]{2})([0-9]{2})_([0-9]{2})([0-9]{2})([0-9]{2})_[0-9]{3}.jpg"
     matches = re.match(pattern, file_name)
     if matches is None:
         return None
@@ -45,7 +45,7 @@ def parse_case_2(file_name: str) -> Optional[datetime.datetime]:
 
     VID_YYYYMMDD_hhmmss_XXX.jpg, where XXX is a counter
     """
-    pattern = r'VID_([0-9]{4})([0-9]{2})([0-9]{2})_([0-9]{2})([0-9]{2})([0-9]{2})_[0-9]{3}.mp4'
+    pattern = r"VID_([0-9]{4})([0-9]{2})([0-9]{2})_([0-9]{2})([0-9]{2})([0-9]{2})_[0-9]{3}.mp4"
     matches = re.match(pattern, file_name)
     if matches is None:
         return None
@@ -63,7 +63,7 @@ def parse_case_3(file_name: str) -> Optional[datetime.datetime]:
 
     IMG-YYYYMMDD-WAXXXX.jpeg, where XXXX is a counter
     """
-    pattern = r'IMG-([0-9]{4})([0-9]{2})([0-9]{2})-WA[0-9]{4}.jpeg'
+    pattern = r"IMG-([0-9]{4})([0-9]{2})([0-9]{2})-WA[0-9]{4}.jpeg"
     matches = re.match(pattern, file_name)
     if matches is None:
         return None
@@ -78,7 +78,7 @@ def parse_case_4(file_name: str) -> Optional[datetime.datetime]:
 
     VID-YYYYMMDD-WAXXXX.mp4, where XXXX is a counter
     """
-    pattern = r'VID-([0-9]{4})([0-9]{2})([0-9]{2})-WA[0-9]{4}.mp4'
+    pattern = r"VID-([0-9]{4})([0-9]{2})([0-9]{2})-WA[0-9]{4}.mp4"
     matches = re.match(pattern, file_name)
     if matches is None:
         return None
