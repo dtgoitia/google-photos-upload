@@ -3,6 +3,7 @@
 black
 click
 flake8
+ipdb
 isort
 mypy
 pip-tools
