@@ -11,6 +11,7 @@ Requirements:
 """
 
 import os
+from pathlib import Path
 
 from click.testing import CliRunner
 
@@ -32,31 +33,37 @@ def test_gpy_scan_date_single(tmp_real_img):
 
 def test_gpy_scan_date_multiple(tmp_real_files):
     """Scan date and time for multiple files."""
-    path = os.path.dirname(tmp_real_files[0])
-    files = [x for x in reversed(tmp_real_files)]
-    expected_output = f"""scanning {files[0]}
-scanning {files[1]}
-scanning {files[2]}
-    metadata date and file timestamp don't match
-scanning {files[3]}
-    metadata date and file timestamp don't match
-scanning {files[4]}
-    metadata date and file timestamp don't match
-"""
+    any_file = tmp_real_files[0]
+    dir_path = Path(any_file).parent
+    files = [f for f in sorted(tmp_real_files)]
 
     runner = CliRunner()
-    result = runner.invoke(cli.main, ["scan", "date", path])
+    result = runner.invoke(cli.main, ["scan", "date", str(dir_path)])
     assert result.exit_code == 0
-    assert result.output == expected_output
+    assert result.output == "\n".join(
+        (
+            f"scanning {files[0]}",
+            "    metadata date and file timestamp don't match",
+            f"scanning {files[1]}",
+            "    metadata date and file timestamp don't match",
+            f"scanning {files[2]}",
+            "    metadata date and file timestamp don't match",
+            f"scanning {files[3]}",
+            f"scanning {files[4]}",
+            "",
+        )
+    )
 
 
 def test_gpy_meta_date_fromfile_single_image(tmp_real_img):
     """Set metadata date and time from filename for a single file."""
     path = os.path.dirname(tmp_real_img)
-    expected_output1 = f"""scanning {tmp_real_img}
-    metadata date and file timestamp don't match\n"""
+    expected_output1 = (
+        f"scanning {tmp_real_img}\n"
+        "    metadata date and file timestamp don't match\n"
+    )
     expected_output2 = (
-        f"writing date 2019-02-02 18:44:42 as metadata to {tmp_real_img}\n"
+        f"writing date 2019-02-02 18:44:42.000 as metadata to {tmp_real_img}\n"
     )
     expected_output3 = f"scanning {tmp_real_img}\n"
     runner = CliRunner()
@@ -78,7 +85,7 @@ def test_gpy_meta_date_fromfile_single_video(tmp_real_vid):
     path = os.path.dirname(tmp_real_vid)
     expected_output1 = f"""scanning {tmp_real_vid}\n"""
     expected_output2 = (
-        f"writing date 2019-02-02 18:45:13 as metadata to {tmp_real_vid}\n"
+        f"writing date 2019-02-02 18:45:13.000 as metadata to {tmp_real_vid}\n"
     )
     expected_output3 = f"scanning {tmp_real_vid}\n"
     runner = CliRunner()
@@ -98,36 +105,39 @@ def test_gpy_meta_date_fromfile_single_video(tmp_real_vid):
 def test_gpy_meta_date_fromfile_multiple(tmp_real_files):
     """Set metadata date and time from filename for multiple files."""
     path = os.path.dirname(tmp_real_files[0])
-    files = [x for x in reversed(tmp_real_files)]
-    expected_output1 = f"""scanning {files[0]}
-scanning {files[1]}
-scanning {files[2]}
-    metadata date and file timestamp don't match
-scanning {files[3]}
-    metadata date and file timestamp don't match
-scanning {files[4]}
-    metadata date and file timestamp don't match
-"""
-    expected_output2 = f"""writing date 2019-02-02 18:45:13 as metadata to {files[0]}
-writing date 2019-02-02 18:44:25 as metadata to {files[1]}
-writing date 2019-02-02 18:45:20 as metadata to {files[2]}
-writing date 2019-02-02 18:44:49 as metadata to {files[3]}
-writing date 2019-02-02 18:44:42 as metadata to {files[4]}
-"""
+    files = [x for x in sorted(tmp_real_files)]
     expected_output3 = ""
     for file in tmp_real_files:
         expected_output3 += f"scanning {file}\n"
+
     runner = CliRunner()
 
     result1 = runner.invoke(cli.main, ["scan", "date", path])
-    result2 = runner.invoke(cli.main, ["meta", "date", "--from-filename", path])
-    result3 = runner.invoke(cli.main, ["scan", "date", path])
-
     assert result1.exit_code == 0
+    assert result1.output == (
+        f"scanning {files[0]}\n"
+        "    metadata date and file timestamp don't match\n"
+        f"scanning {files[1]}\n"
+        "    metadata date and file timestamp don't match\n"
+        f"scanning {files[2]}\n"
+        "    metadata date and file timestamp don't match\n"
+        f"scanning {files[3]}\n"
+        f"scanning {files[4]}\n"
+    )
+
+    result2 = runner.invoke(cli.main, ["meta", "date", "--from-filename", path])
     assert result2.exit_code == 0
+    breakpoint()
+    assert result2.output == (
+        f"writing date 2019-02-02 18:45:13.000 as metadata to {files[0]}\n"
+        # f"writing date 2019-02-02 18:44:25.000 as metadata to {files[1]}\n"
+        # f"writing date 2019-02-02 18:45:20.000 as metadata to {files[2]}\n"
+        # f"writing date 2019-02-02 18:44:49.000 as metadata to {files[3]}\n"
+        # f"writing date 2019-02-02 18:44:42.000 as metadata to {files[4]}\n"
+    )
+
+    result3 = runner.invoke(cli.main, ["scan", "date", path])
     assert result3.exit_code == 0
-    assert result1.output == expected_output1
-    assert result2.output == expected_output2
     assert result3.output == expected_output3
 
 

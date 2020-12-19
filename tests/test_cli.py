@@ -72,7 +72,7 @@ def test_get_paths_recursive_directory(mock_dir):
         os.path.join(mock_dir, "directory_1", "file_6.mp4"),
     ]
 
-    actual_paths = list(get_paths_recursive(root_path=mock_dir))
+    actual_paths = list(get_paths_recursive(root_path_str=mock_dir))
 
     for path in actual_paths:
         assert path in expected_paths
@@ -82,7 +82,7 @@ def test_get_paths_recursive_file(mock_dir):
     file_path = os.path.join(mock_dir, "file_1.jpg")
     expected_paths = [file_path]
 
-    actual_paths = list(get_paths_recursive(root_path=file_path))
+    actual_paths = list(get_paths_recursive(root_path_str=file_path))
 
     assert actual_paths == expected_paths
 
