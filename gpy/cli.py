@@ -1,6 +1,7 @@
 import datetime
 import os
 import re
+from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
 
 import click
@@ -37,7 +38,7 @@ def gyp_scan_date(path):
      - Date tag: the supported file does/doesn't have date tag.
      - GPS tag: the supported file does/doesn't have GPS tag.
     """
-    file_paths = get_paths_recursive(root_path=path)
+    file_paths = get_paths_recursive(root_path_str=path)
     for file_path in file_paths:
         report = scan_date(file_path)
         print_report(report)
@@ -68,7 +69,7 @@ def cmd_meta_date(
     no_backup: bool,
 ) -> None:
     """Edit file metadata date and time."""
-    file_paths = get_paths_recursive(root_path=path)
+    file_paths = get_paths_recursive(root_path_str=path)
     meta_date = None
     if input and from_filename:
         log(
@@ -207,21 +208,18 @@ def is_supported(file_path: str) -> bool:
     return False
 
 
-def get_paths_recursive(*, root_path: str) -> Iterable[str]:
+def get_paths_recursive(*, root_path_str: str) -> Iterable[str]:
     """Yield absolute path of supported files under root_path.
 
     Refer to is_supported() for further information on supported files.
     """
-    is_file = True
-    paths = os.walk(root_path)
-    for path, dirs, files in paths:
-        is_file = False
-        for file in files:
-            absolute_path = os.path.abspath(os.path.join(path, file))
-            if is_supported(absolute_path):
-                yield absolute_path
-    if is_file:
-        yield root_path
+    root_path = Path(root_path_str)
+    if root_path.is_file():
+        yield str(root_path)
+    else:
+        for path in sorted(root_path.iterdir()):
+            if path.is_file():
+                yield str(path)  # TODO: return Path, not str
 
 
 def print_report(report: dict) -> None:

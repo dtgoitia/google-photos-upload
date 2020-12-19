@@ -1,17 +1,22 @@
 """This module contains the fixtures to create one or more temporary files for
 the tests.
 """
-import os
+import shutil
+from pathlib import Path, PosixPath
 from typing import Callable, List
 
 import pytest
-from py._path.local import LocalPath
 
 TmpFileCreator = Callable[[str], str]
 
 
 @pytest.fixture
-def create_tmp_file(tmpdir: LocalPath) -> TmpFileCreator:
+def fixtures_dir() -> Path:
+    return Path.cwd() / "tests" / "statics"
+
+
+@pytest.fixture
+def create_tmp_file(tmp_path: PosixPath, fixtures_dir: Path) -> TmpFileCreator:
     """Return function to temporary copy a given file for tests.
 
     The function makes a copy with the passed file name (file_name) into
@@ -21,15 +26,16 @@ def create_tmp_file(tmpdir: LocalPath) -> TmpFileCreator:
     copied as-is, preserving any metadata the file might contain.
     """
 
-    def result(file_name: str) -> str:
+    def file_copier(file_name: str) -> str:
         """."""
-        source = os.path.join(os.getcwd(), "tests", "statics", file_name)
-        with open(source, "rb") as file:
-            content = file.read()
-            tmpdir.join(file_name).write_binary(content)
-        return os.path.join(tmpdir.dirname, tmpdir.basename, file_name)
+        source_path = fixtures_dir / file_name
+        new_fixture_path = tmp_path / file_name
 
-    return result
+        shutil.copy(src=source_path, dst=new_fixture_path)
+
+        return str(new_fixture_path)  # TODO: return Path, not str
+
+    return file_copier
 
 
 @pytest.fixture
@@ -59,11 +65,12 @@ def tmp_real_files(create_tmp_file: TmpFileCreator) -> List[str]:
     The static files are real images which contain origina metadata, preserved
     without any modification or deletion.
     """
-    files_name = (
+    file_names = (
         "IMG_20190202_184442_353.jpg",
         "IMG_20190202_184449_766.jpg",
         "IMG_20190202_184520_656.jpg",
         "VID_20190202_184425_556.mp4",
         "VID_20190202_184513_634.mp4",
     )
-    return [create_tmp_file(file) for file in files_name]
+    paths = [create_tmp_file(file_name) for file_name in file_names]
+    return paths
