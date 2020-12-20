@@ -1,5 +1,6 @@
 import datetime
 import os
+from pathlib import Path, PosixPath
 
 import pytest
 from py._path.local import LocalPath
@@ -18,17 +19,23 @@ from gpy.cli import (
 # Fixtures
 
 
-@pytest.fixture
-def mock_dir(tmpdir: LocalPath) -> str:
-    tmpdir.join("file_1.jpg").write("file content 1\n")
-    tmpdir.join("file_2.png").write("file content 2\n")
-    tmpdir.join("file_3.3gp").write("file content 3\n")
-    tmpdir.join("file_4.mp3").write("file content 4\n")
-    d1 = tmpdir.mkdir("directory_1")
-    d1.join("file_5.wav").write("file content 5\n")
-    d1.join("file_6.mp4").write("file content 6\n")
+def mkdir(path: Path, dir_name: str) -> Path:
+    dir = Path(path) / dir_name
+    dir.mkdir()
+    return dir
 
-    return os.path.join(tmpdir.dirname, tmpdir.basename)
+
+@pytest.fixture
+def mock_dir(tmp_path: PosixPath, tmpdir: LocalPath) -> str:
+    Path(tmp_path / "file_1.jpg").write_text("file content 1\n")
+    Path(tmp_path / "file_2.png").write_text("file content 2\n")
+    Path(tmp_path / "file_3.3gp").write_text("file content 3\n")
+    Path(tmp_path / "file_4.mp3").write_text("file content 4\n")
+    dir = mkdir(tmp_path, "directory_1")
+    (dir / "file_5.wav").write_text("file content 5\n")
+    (dir / "file_6.mp4").write_text("file content 6\n")
+
+    return str(tmp_path)
 
 
 @pytest.fixture
