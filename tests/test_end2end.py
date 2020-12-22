@@ -15,7 +15,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from gpy import cli
+from gpy.cli.cli import gpy_cli
 
 
 def test_gpy_scan_date_single(tmp_real_img):
@@ -25,7 +25,7 @@ def test_gpy_scan_date_single(tmp_real_img):
     metadata date and file timestamp don't match\n"""
     runner = CliRunner()
 
-    result = runner.invoke(cli.main, ["scan", "date", path])
+    result = runner.invoke(gpy_cli, ["scan", "date", path])
 
     assert result.exit_code == 0
     assert result.output == expected_output
@@ -38,7 +38,7 @@ def test_gpy_scan_date_multiple(tmp_real_files):
     files = [f for f in sorted(tmp_real_files)]
 
     runner = CliRunner()
-    result = runner.invoke(cli.main, ["scan", "date", str(dir_path)])
+    result = runner.invoke(gpy_cli, ["scan", "date", str(dir_path)])
     assert result.exit_code == 0
     assert result.output == "\n".join(
         (
@@ -68,9 +68,9 @@ def test_gpy_meta_date_fromfile_single_image(tmp_real_img):
     expected_output3 = f"scanning {tmp_real_img}\n"
     runner = CliRunner()
 
-    result1 = runner.invoke(cli.main, ["scan", "date", tmp_real_img])
-    result2 = runner.invoke(cli.main, ["meta", "date", "--from-filename", path])
-    result3 = runner.invoke(cli.main, ["scan", "date", tmp_real_img])
+    result1 = runner.invoke(gpy_cli, ["scan", "date", tmp_real_img])
+    result2 = runner.invoke(gpy_cli, ["meta", "date", "--from-filename", path])
+    result3 = runner.invoke(gpy_cli, ["scan", "date", tmp_real_img])
 
     assert result1.exit_code == 0
     assert result2.exit_code == 0
@@ -90,9 +90,9 @@ def test_gpy_meta_date_fromfile_single_video(tmp_real_vid):
     expected_output3 = f"scanning {tmp_real_vid}\n"
     runner = CliRunner()
 
-    result1 = runner.invoke(cli.main, ["scan", "date", tmp_real_vid])
-    result2 = runner.invoke(cli.main, ["meta", "date", "--from-filename", path])
-    result3 = runner.invoke(cli.main, ["scan", "date", tmp_real_vid])
+    result1 = runner.invoke(gpy_cli, ["scan", "date", tmp_real_vid])
+    result2 = runner.invoke(gpy_cli, ["meta", "date", "--from-filename", path])
+    result3 = runner.invoke(gpy_cli, ["scan", "date", tmp_real_vid])
 
     assert result1.exit_code == 0
     assert result2.exit_code == 0
@@ -112,7 +112,7 @@ def test_gpy_meta_date_fromfile_multiple(tmp_real_files):
 
     runner = CliRunner()
 
-    result1 = runner.invoke(cli.main, ["scan", "date", cmd_path])
+    result1 = runner.invoke(gpy_cli, ["scan", "date", cmd_path])
     assert result1.exit_code == 0
     assert result1.output == (
         f"scanning {file_paths[0]}\n"
@@ -125,7 +125,7 @@ def test_gpy_meta_date_fromfile_multiple(tmp_real_files):
         f"scanning {file_paths[4]}\n"
     )
 
-    result2 = runner.invoke(cli.main, ["meta", "date", "--from-filename", cmd_path])
+    result2 = runner.invoke(gpy_cli, ["meta", "date", "--from-filename", cmd_path])
     assert result2.exit_code == 0
     assert result2.output == (
         f"writing date 2019-02-02 18:44:42.000 as metadata to {file_paths[0]}\n"
@@ -135,7 +135,7 @@ def test_gpy_meta_date_fromfile_multiple(tmp_real_files):
         f"writing date 2019-02-02 18:45:13.000 as metadata to {file_paths[4]}\n"
     )
 
-    result3 = runner.invoke(cli.main, ["scan", "date", cmd_path])
+    result3 = runner.invoke(gpy_cli, ["scan", "date", cmd_path])
     assert result3.exit_code == 0
     assert result3.output == expected_output3
 
@@ -145,7 +145,7 @@ def test_gpy_meta_date_input_single(tmp_real_img):
     runner = CliRunner()
 
     result = runner.invoke(
-        cli.main, ["meta", "date", "--input=2010-01-01_00:00:00.01", tmp_real_img]
+        gpy_cli, ["meta", "date", "--input=2010-01-01_00:00:00.01", tmp_real_img]
     )
 
     assert result.exit_code == 0
@@ -160,7 +160,7 @@ def test_gpy_meta_date_nobackup_single(tmp_real_img):
     runner = CliRunner()
 
     result = runner.invoke(
-        cli.main,
+        gpy_cli,
         ["meta", "date", "--no-backup", "--input=2010-01-01_00:00:00", tmp_real_img],
     )
 
@@ -176,7 +176,7 @@ def test_gpy_meta_date_backup_single(tmp_real_img):
     runner = CliRunner()
 
     result = runner.invoke(
-        cli.main, ["meta", "date", "--input=2010-01-01_00:00:00", tmp_real_img]
+        gpy_cli, ["meta", "date", "--input=2010-01-01_00:00:00", tmp_real_img]
     )
 
     assert result.exit_code == 0

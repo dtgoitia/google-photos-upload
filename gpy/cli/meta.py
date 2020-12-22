@@ -6,46 +6,17 @@ import click
 
 from gpy import exiftool
 from gpy.filesystem import get_paths_recursive
-from gpy.parsers.dates import try_to_parse_date
+from gpy.log import log
 from gpy.parsers.filenames import parse
-from gpy.types import Report
 
 
-@click.group()
-def main():
-    """Entry point."""
-    pass
-
-
-@main.group()
-def scan():
-    """Scan file and directory metadata."""
-    pass
-
-
-@main.group()
-def meta():
+@click.group(name="meta")
+def meta_group() -> None:
     """Edit file metadata."""
     pass
 
 
-@scan.command(name="date")
-@click.argument("path", type=click.Path(exists=True))
-def gyp_scan_date(path):
-    """Scan files and directories.
-
-    Scan files and directories looking and report:
-     - Supported files: the metadata of these files can be manipulated.
-     - Date tag: the supported file does/doesn't have date tag.
-     - GPS tag: the supported file does/doesn't have GPS tag.
-    """
-    file_paths = get_paths_recursive(root_path=Path(path))
-    for file_path in file_paths:
-        report = scan_date(file_path)
-        print_report(report)
-
-
-@meta.command(name="date")
+@meta_group.command(name="date")
 # @click.option('--clean-all', is_flag=True, default=False, help='remove all metadata')
 @click.option(
     "--no-backup",
@@ -62,8 +33,7 @@ def gyp_scan_date(path):
 )
 @click.option("--input", help="manually input date and time (YYYY-MM-DD_hh:mm:ss.ms)")
 @click.argument("path", type=click.Path(exists=True))
-# def date(clean_all, no_backup, from_filename, path):
-def cmd_meta_date(
+def meta_date_command(
     path: str,
     from_filename: bool,
     input: Optional[str],
@@ -85,28 +55,6 @@ def cmd_meta_date(
             meta_date = filename_date
         if meta_date:
             edit_date(file_path, meta_date, no_backup)
-
-
-def scan_date(file_path: Path) -> Report:
-    """Scan file date and time metadata."""
-    log(f"scanning {file_path}", fg="bright_black")
-
-    filename_date = parse(file_path.name)
-    metadata_date_string = exiftool.read_datetime(file_path)
-    metadata_date = try_to_parse_date(metadata_date_string)
-
-    return Report(
-        path=file_path,
-        filename_date=filename_date,
-        metadata_date=metadata_date,
-    )
-
-
-def scan_gps(file_path: Path) -> Report:
-    """Scan file geolocation related metadata."""
-    log(f"scanning {file_path}", fg="bright_black")
-    gps = exiftool.read_gps(file_path)
-    return Report(path=file_path, gps=gps)
 
 
 def edit_date(file_path: Path, ts: datetime.datetime, no_backup: bool) -> None:
@@ -132,26 +80,3 @@ def input_to_datetime(input: str) -> Optional[datetime.datetime]:
         "ERROR: provided input doesn't have the required format (YYYY-MM-DD_hh:mm:ss.ms)"
     )
     return None
-
-
-def print_report(report: Report) -> None:
-    """Print on screen a report dictionary."""
-    if not report.dates_match:
-        log("    metadata date and file timestamp don't match")
-
-
-def log(s: str, fg: Optional[str] = None) -> None:
-    """Log with colour."""
-    click.echo(click.style(s, fg=fg))
-
-
-# TODO:
-# Add more regex patterns to recognize more image file names and ensure the date
-# Create one command that will:
-#   1. Scan all images or videos in the directory
-#   2. Try to parse the filename to extract timestamp.
-#   3. Look data and geolocation metadata in the files.
-#   4. Report:
-#        - Filename and metadata match, +GPS -> OK
-#        - If no GPS metadata -> Add '_nogps' at the end of the filename
-#        - Filename and metadata don't match ->
