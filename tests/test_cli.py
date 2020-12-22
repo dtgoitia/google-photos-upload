@@ -4,13 +4,7 @@ from pathlib import Path, PosixPath
 import pytest
 from py._path.local import LocalPath
 
-from gpy.cli import (
-    compare_dates,
-    input_to_datetime,
-    scan_date,
-    scan_gps,
-    try_to_parse_date,
-)
+from gpy.cli import compare_dates, input_to_datetime, scan_date, scan_gps
 from gpy.filesystem import get_paths_recursive, is_supported
 
 # -----------------------------------------------------------------------------
@@ -191,21 +185,6 @@ def test_scan_date(
     parse_mocked.return_value = parse_return
 
     actual_result = scan_date(file_path=path)
-
-    assert actual_result == expected_result
-
-
-@pytest.mark.parametrize(
-    ("text", "expected_result"),
-    [
-        (None, None),
-        ("blah", None),
-        ("2010-01-01 16:01:01", datetime.datetime(2010, 1, 1, 16, 1, 1)),
-        ("2010-01-01 16:01:01.00+00.00", datetime.datetime(2010, 1, 1, 16, 1, 1)),
-    ],
-)
-def test_try_to_parse_date(text, expected_result):
-    actual_result = try_to_parse_date(text)
 
     assert actual_result == expected_result
 
