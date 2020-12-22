@@ -4,8 +4,9 @@ from pathlib import Path, PosixPath
 import pytest
 from py._path.local import LocalPath
 
-from gpy.cli import compare_dates, input_to_datetime, scan_date, scan_gps
+from gpy.cli import input_to_datetime, scan_date, scan_gps
 from gpy.filesystem import get_paths_recursive, is_supported
+from gpy.types import Report
 
 # -----------------------------------------------------------------------------
 # Fixtures
@@ -91,84 +92,77 @@ def test_get_paths_recursive_file(tmp_path):
             Path("blah/foo.mp4"),
             None,
             None,
-            {
-                "filename_date": None,
-                "match_date": False,
-                "metadata_date": None,
-                "path": Path("blah/foo.mp4"),
-            },
+            Report(
+                filename_date=None,
+                metadata_date=None,
+                path=Path("blah/foo.mp4"),
+            ),
             id="filename_with_no_date_or_no_metadata_or_broken_metadata",
         ),
         pytest.param(
             Path("blah/foo.mp4"),
             "2010-01-01 16:01:01",
             None,
-            {
-                "filename_date": None,
-                "match_date": False,
-                "metadata_date": datetime.datetime(2010, 1, 1, 16, 1, 1),
-                "path": Path("blah/foo.mp4"),
-            },
+            Report(
+                filename_date=None,
+                metadata_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
+                path=Path("blah/foo.mp4"),
+            ),
             id="filename_with_no_date_but_metadata_OK",
         ),
         pytest.param(
             Path("blah/VID_20100101_160101_123.mp4"),
             None,
             datetime.datetime(2010, 1, 1, 16, 1, 1),
-            {
-                "filename_date": datetime.datetime(2010, 1, 1, 16, 1, 1),
-                "match_date": False,
-                "metadata_date": None,
-                "path": Path("blah/VID_20100101_160101_123.mp4"),
-            },
+            Report(
+                filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
+                metadata_date=None,
+                path=Path("blah/VID_20100101_160101_123.mp4"),
+            ),
             id="filename_ok_but_no_metadata_or_broken_metadata",
         ),
         pytest.param(
             Path("blah/VID_20100101_160101_123.mp4"),
             "2012-02-02 17:02:02",
             datetime.datetime(2010, 1, 1, 16, 1, 1),
-            {
-                "filename_date": datetime.datetime(2010, 1, 1, 16, 1, 1),
-                "match_date": False,
-                "metadata_date": datetime.datetime(2012, 2, 2, 17, 2, 2),
-                "path": Path("blah/VID_20100101_160101_123.mp4"),
-            },
+            Report(
+                filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
+                metadata_date=datetime.datetime(2012, 2, 2, 17, 2, 2),
+                path=Path("blah/VID_20100101_160101_123.mp4"),
+            ),
             id="filename_ok_and_metadata_ok_but_dates_do_not_match",
         ),
         pytest.param(
             Path("blah/VID_20100101_160101_123.mp4"),
             "2010-01-01 16:01:01",
             datetime.datetime(2010, 1, 1, 16, 1, 1),
-            {
-                "filename_date": datetime.datetime(2010, 1, 1, 16, 1, 1),
-                "match_date": True,
-                "metadata_date": datetime.datetime(2010, 1, 1, 16, 1, 1),
-                "path": Path("blah/VID_20100101_160101_123.mp4"),
-            },
+            Report(
+                filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
+                metadata_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
+                path=Path("blah/VID_20100101_160101_123.mp4"),
+            ),
             id="filename_ok_and_metadata_ok_and_dates_match",
         ),
         pytest.param(
             Path("blah/VID_20100101_160101_123.mp4"),
             "2010-01-01 16:01:01.00+00.00",
             datetime.datetime(2010, 1, 1, 16, 1, 1),
-            {
-                "filename_date": datetime.datetime(2010, 1, 1, 16, 1, 1),
-                "match_date": True,
-                "metadata_date": datetime.datetime(2010, 1, 1, 16, 1, 1),
-                "path": Path("blah/VID_20100101_160101_123.mp4"),
-            },
+            Report(
+                filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
+                metadata_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
+                path=Path("blah/VID_20100101_160101_123.mp4"),
+            ),
             id="filename_ok_and_metadata_ok_with_timezone_+0h_and_dates_match",
         ),
         pytest.param(
             Path("blah/VID_20100101_160101_123.mp4"),
             "2010-01-01 16:01:01.00+05.00",
             datetime.datetime(2010, 1, 1, 16, 1, 1),
-            {
-                "filename_date": datetime.datetime(2010, 1, 1, 16, 1, 1),
-                "match_date": True,
-                "metadata_date": datetime.datetime(2010, 1, 1, 16, 1, 1),
-                "path": Path("blah/VID_20100101_160101_123.mp4"),
-            },
+            Report(
+                filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
+                metadata_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
+                path=Path("blah/VID_20100101_160101_123.mp4"),
+            ),
             id="filename_ok_and_metadata_ok_with_timezone_+5h_and_dates_match",
         ),
     ],
@@ -201,29 +195,6 @@ def test_scan_gps(read_gps_mocked, return_value, expected_result):
     read_gps_mocked.return_value = return_value
 
     actual_result = scan_gps(file_path=Path("random_path"))
-
-    assert actual_result == expected_result
-
-
-@pytest.mark.parametrize(
-    ("date_a", "date_b", "expected_result"),
-    [
-        (
-            datetime.datetime(2018, 12, 12, 1, 1, 1, 1),
-            datetime.datetime(2018, 12, 12, 1, 1, 1, 2),
-            False,
-        ),
-        (
-            datetime.datetime(2018, 12, 12, 1, 1, 1, 1),
-            datetime.datetime(2018, 12, 12, 1, 1, 1, 1),
-            True,
-        ),
-        (None, datetime.datetime(2018, 12, 12, 1, 1, 1, 1), False),
-        (None, None, False),
-    ],
-)
-def test_compare_dates(date_a, date_b, expected_result):
-    actual_result = compare_dates(date_a, date_b)
 
     assert actual_result == expected_result
 

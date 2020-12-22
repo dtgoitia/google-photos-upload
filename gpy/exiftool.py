@@ -12,6 +12,8 @@ from typing import Optional
 
 import click
 
+from gpy.types import GpsCoordinates
+
 # def exiftool() -> None:
 #     write_geolocation('test.jpg', north=43.0, west=-79.0)
 #     write_datetime('test.jpg', year=2018, month=12, day=31, h=20, m=55, s=42, ms=2, timezone=-5)
@@ -113,7 +115,7 @@ def read_datetime(file_path: Path) -> Optional[str]:
     return result
 
 
-def read_gps(file_path: Path) -> Path:
+def read_gps(file_path: Path) -> GpsCoordinates:
     """Return GPS coordinates from file, if any."""
     raise NotImplementedError("TODO > find out how pull GPS data with exiftool")
 
