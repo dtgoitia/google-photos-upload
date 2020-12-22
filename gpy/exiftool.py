@@ -7,6 +7,7 @@
 import datetime
 import re
 import subprocess
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -88,15 +89,13 @@ def parse_date_from_filename(file_path: str) -> datetime.datetime:
     return result
 
 
-def read_datetime(file_path: str) -> Optional[str]:
+def read_datetime(file_path: Path) -> Optional[str]:
     """Return Date/Time from file, if any. Otherwise, return None."""
-    shell_instruction = f'exiftool -AllDates "{file_path}"'
-    completed_process = subprocess.run(
-        shell_instruction, capture_output=True, shell=True
-    )
+    cmd = f'exiftool -AllDates "{file_path}"'
+    completed_process = subprocess.run(cmd, capture_output=True, shell=True)
 
     if completed_process.returncode != 0:
-        error_message = f"Reading date and time from '{file_path}' >>> "
+        error_message = f"Reading date and time from {file_path!r} >>> "
         error_message += completed_process.stderr.decode("utf-8").rstrip("\n")
         click.echo(error_message)
         return None
@@ -114,13 +113,17 @@ def read_datetime(file_path: str) -> Optional[str]:
     return result
 
 
-def read_gps(file_path: str) -> str:
+def read_gps(file_path: Path) -> Path:
     """Return GPS coordinates from file, if any."""
     raise NotImplementedError("TODO > find out how pull GPS data with exiftool")
 
 
 def write_datetime(
-    file_path: str, *, ts: datetime.datetime, timezone: int = 0, no_backup: bool = False
+    file_path: Path,
+    *,
+    ts: datetime.datetime,
+    timezone: int = 0,
+    no_backup: bool = False,
 ) -> bool:
     """Write Date/Time to file.
 
@@ -141,14 +144,10 @@ def write_datetime(
     tz = format_tz(timezone)
     formatted_date_time = f"{date_time}{tz}"
 
-    shell_instruction = "exiftool"
-    shell_instruction += f' -AllDates="{formatted_date_time}"'
-    shell_instruction += f" {file_path}"
+    cmd = f'exiftool -AllDates="{formatted_date_time}" {file_path}'
     if no_backup:
-        shell_instruction += " -overwrite_original"
-    completed_process = subprocess.run(
-        shell_instruction, capture_output=True, shell=True
-    )
+        cmd += " -overwrite_original"
+    completed_process = subprocess.run(cmd, capture_output=True, shell=True)
 
     if completed_process.returncode != 0:
         error_message = f"Writing date and time to '{file_path}' >>> "

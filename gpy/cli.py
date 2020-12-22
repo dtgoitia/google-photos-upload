@@ -1,5 +1,4 @@
 import datetime
-import os
 import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, Optional
@@ -38,7 +37,8 @@ def gyp_scan_date(path):
      - Date tag: the supported file does/doesn't have date tag.
      - GPS tag: the supported file does/doesn't have GPS tag.
     """
-    file_paths = get_paths_recursive(root_path_str=path)
+    root_path = Path(path)
+    file_paths = get_paths_recursive(root_path=root_path)
     for file_path in file_paths:
         report = scan_date(file_path)
         print_report(report)
@@ -69,7 +69,7 @@ def cmd_meta_date(
     no_backup: bool,
 ) -> None:
     """Edit file metadata date and time."""
-    file_paths = get_paths_recursive(root_path_str=path)
+    file_paths = get_paths_recursive(root_path=Path(path))
     meta_date = None
     if input and from_filename:
         log(
@@ -81,17 +81,17 @@ def cmd_meta_date(
 
     for file_path in file_paths:
         if input is None and from_filename:
-            filename_date = parse(os.path.basename(file_path))
+            filename_date = parse(file_path.name)
             meta_date = filename_date
         if meta_date:
             edit_date(file_path, meta_date, no_backup)
 
 
-def scan_date(file_path: str) -> Dict[str, Any]:
+def scan_date(file_path: Path) -> Dict[str, Any]:
     """Scan file date and time metadata."""
     log(f"scanning {file_path}", fg="bright_black")
     report = {"path": file_path}  # type: Dict[str, Any]
-    filename_date = parse(os.path.basename(file_path))
+    filename_date = parse(file_path.name)
     metadata_date_string = exiftool.read_datetime(file_path)
     metadata_date = try_to_parse_date(metadata_date_string)
     report["filename_date"] = filename_date
@@ -143,7 +143,7 @@ def try_to_parse_date_2(text: str) -> Optional[datetime.datetime]:
     return datetime.datetime(year, month, day, h, m, s)
 
 
-def scan_gps(file_path: str) -> dict:
+def scan_gps(file_path: Path) -> Dict[str, Path]:
     """Scan file geolocation related metadata."""
     log(f"scanning {file_path}", fg="bright_black")
     report = {"path": file_path}
@@ -167,7 +167,7 @@ def compare_dates(
     return False
 
 
-def edit_date(file_path: str, ts: datetime.datetime, no_backup: bool) -> None:
+def edit_date(file_path: Path, ts: datetime.datetime, no_backup: bool) -> None:
     """Write date and time to file metadata."""
     formatted_date = ts.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     log(f"writing date {formatted_date} as metadata to {file_path}", fg="bright_black")
@@ -192,7 +192,7 @@ def input_to_datetime(input: str) -> Optional[datetime.datetime]:
     return None
 
 
-def is_supported(file_path: str) -> bool:
+def is_supported(path: Path) -> bool:
     """Return true if the file is supported.
 
     At the moment only the following extensions are supported:
@@ -201,25 +201,20 @@ def is_supported(file_path: str) -> bool:
         - .mp4
         - .3gp
     """
-    filename, file_extension = os.path.splitext(file_path)
-    supported_extensions = (".jpg", ".png", ".mp4", ".3gp")
-    if file_extension in supported_extensions:
-        return True
-    return False
+    return path.suffix in (".jpg", ".png", ".mp4", ".3gp")
 
 
-def get_paths_recursive(*, root_path_str: str) -> Iterable[str]:
+def get_paths_recursive(*, root_path: Path) -> Iterable[Path]:
     """Yield absolute path of supported files under root_path.
 
     Refer to is_supported() for further information on supported files.
     """
-    root_path = Path(root_path_str)
-    if root_path.is_file():
-        yield str(root_path)
+    if root_path.is_file() and is_supported(root_path):
+        yield root_path
     else:
-        for path in sorted(root_path.iterdir()):
-            if path.is_file():
-                yield str(path)  # TODO: return Path, not str
+        for path in sorted(root_path.rglob("*")):
+            if path.is_file() and is_supported(path):
+                yield path
 
 
 def print_report(report: dict) -> None:

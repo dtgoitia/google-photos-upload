@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from gpy.exiftool import read_datetime
@@ -23,7 +25,7 @@ def test_read_date_with_mocked_exiftool(exiftool_mocked):
     exiftool_mocked.return_value.stdout = b": 2019:01:01 08:50:26 \n"
     expected_result = "2019-01-01 08:50:26"
 
-    actual_result = read_datetime("IMG_20190202_184442_353.jpg")
+    actual_result = read_datetime(Path("IMG_20190202_184442_353.jpg"))
 
     assert actual_result == expected_result
 
