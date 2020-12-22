@@ -6,13 +6,12 @@ from py._path.local import LocalPath
 
 from gpy.cli import (
     compare_dates,
-    get_paths_recursive,
     input_to_datetime,
-    is_supported,
     scan_date,
     scan_gps,
     try_to_parse_date,
 )
+from gpy.filesystem import get_paths_recursive, is_supported
 
 # -----------------------------------------------------------------------------
 # Fixtures

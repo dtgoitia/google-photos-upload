@@ -1,12 +1,13 @@
 import datetime
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict, Optional
 
 import click
 
 from gpy import exiftool
 from gpy.filenames import parse
+from gpy.filesystem import get_paths_recursive
 
 
 @click.group()
@@ -190,31 +191,6 @@ def input_to_datetime(input: str) -> Optional[datetime.datetime]:
         "ERROR: provided input doesn't have the required format (YYYY-MM-DD_hh:mm:ss.ms)"
     )
     return None
-
-
-def is_supported(path: Path) -> bool:
-    """Return true if the file is supported.
-
-    At the moment only the following extensions are supported:
-        - .jpg
-        - .png
-        - .mp4
-        - .3gp
-    """
-    return path.suffix in (".jpg", ".png", ".mp4", ".3gp")
-
-
-def get_paths_recursive(*, root_path: Path) -> Iterable[Path]:
-    """Yield absolute path of supported files under root_path.
-
-    Refer to is_supported() for further information on supported files.
-    """
-    if root_path.is_file() and is_supported(root_path):
-        yield root_path
-    else:
-        for path in sorted(root_path.rglob("*")):
-            if path.is_file() and is_supported(path):
-                yield path
 
 
 def print_report(report: dict) -> None:
