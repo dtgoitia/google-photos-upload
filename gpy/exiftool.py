@@ -104,9 +104,11 @@ def read_datetime(file_path: Path) -> Optional[str]:
 
     # Extract timestamp and format it as 'YYYY-MM-DD hh:mm:ss'
     result = completed_process.stdout.decode("utf-8")
+    if not result:
+        return None
+
     result = result.split("\n")[0]
-    result = result.split(":")[1:]  # type: ignore
-    result = ":".join(result)
+    result = ":".join(result.split(":")[1:])
     result = result.strip()
     result = result.split(" ")  # type: ignore
     result = (result[0].replace(":", "-"), result[1])  # type: ignore
