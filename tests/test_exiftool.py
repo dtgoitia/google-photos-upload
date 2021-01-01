@@ -38,5 +38,6 @@ def test_read_date_with_real_exiftool(tmp_real_img):
     assert actual_result == expected_result
 
 
+@pytest.mark.skip(reason="not implemented yet")
 def test_write_date(exiftool_mocked, tmp_real_img):
     pass
