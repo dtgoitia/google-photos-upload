@@ -7,7 +7,7 @@ import click
 from gpy import exiftool
 from gpy.filesystem import get_paths_recursive
 from gpy.log import log
-from gpy.parsers.filenames import parse
+from gpy.parsers.filenames import get_datetime_from_filename
 
 
 @click.group(name="meta")
@@ -51,7 +51,7 @@ def meta_date_command(
 
     for file_path in get_paths_recursive(root_path=Path(path)):
         if input is None and from_filename:
-            filename_date = parse(file_path.name)
+            filename_date = get_datetime_from_filename(file_path.name)
             meta_date = filename_date
         if meta_date:
             edit_date(file_path, meta_date, no_backup)

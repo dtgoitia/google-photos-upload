@@ -5,8 +5,7 @@ import click
 from gpy import exiftool
 from gpy.filesystem import get_paths_recursive
 from gpy.log import log, print_report
-from gpy.parsers.dates import try_to_parse_date
-from gpy.parsers.filenames import parse
+from gpy.parsers.filenames import get_datetime_from_filename
 from gpy.types import Report
 
 
@@ -32,16 +31,15 @@ def scan_date_command(path):
         print_report(report)
 
 
-def scan_date(file_path: Path) -> Report:
+def scan_date(path: Path) -> Report:
     """Scan file date and time metadata."""
-    log(f"scanning {file_path}", fg="bright_black")
+    log(f"scanning {path}", fg="bright_black")
 
-    filename_date = parse(file_path.name)
-    metadata_date_string = exiftool.read_datetime(file_path)
-    metadata_date = try_to_parse_date(metadata_date_string)
+    filename_date = get_datetime_from_filename(path.name)
+    metadata_date = exiftool.read_datetime(path)
 
     return Report(
-        path=file_path,
+        path=path,
         filename_date=filename_date,
         metadata_date=metadata_date,
     )

@@ -10,7 +10,7 @@ from gpy.types import Report
 @pytest.fixture
 def parse_mocked(mocker):
     # TODO: refactor to avoid monkey-patching and use DI instead
-    return mocker.patch("gpy.parsers.filenames.parse")
+    return mocker.patch("gpy.parsers.filenames.get_datetime_from_filename")
 
 
 @pytest.fixture

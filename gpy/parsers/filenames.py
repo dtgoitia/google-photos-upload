@@ -8,7 +8,7 @@ class ParserException(Exception):
     pass
 
 
-def parse(file_name: str) -> Optional[datetime.datetime]:
+def get_datetime_from_filename(file_name: str) -> Optional[datetime.datetime]:
     """Return timestamp from file name."""
     case_1 = parse_case_1(file_name)
     if case_1:

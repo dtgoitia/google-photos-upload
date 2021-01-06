@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-from gpy.parsers.filenames import parse
+from gpy.parsers.filenames import get_datetime_from_filename
 
 
 @pytest.mark.parametrize(
@@ -15,7 +15,7 @@ from gpy.parsers.filenames import parse
         ("blah", None),
     ],
 )
-def test_parse(file_name, expected_result):
-    actual_result = parse(file_name)
+def test_get_datetime_from_filename(file_name, expected_result):
+    actual_result = get_datetime_from_filename(file_name)
 
     assert actual_result == expected_result
