@@ -2,7 +2,7 @@ from pathlib import Path
 
 import click
 
-from gpy import exiftool
+from gpy.exiftool import client as exiftool
 from gpy.filesystem import get_paths_recursive
 from gpy.log import log, print_report
 from gpy.parsers.filenames import get_datetime_from_filename

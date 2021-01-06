@@ -8,8 +8,9 @@ import datetime
 import re
 import subprocess
 from pathlib import Path
-from typing import Optional
+from textwrap import indent
 
+import attr
 import click
 
 from gpy.types import GpsCoordinates
@@ -18,6 +19,27 @@ from gpy.types import GpsCoordinates
 #     write_geolocation('test.jpg', north=43.0, west=-79.0)
 #     write_datetime('test.jpg', year=2018, month=12, day=31, h=20, m=55, s=42, ms=2, timezone=-5)
 #     parse_date_from_filename('IMG_20190101_085024_277.jpg')
+
+EXIFTOOL_TIMESTAMP_FORMAT = "%Y-%m-%d %h:%M:%s"
+
+
+@attr.s(auto_attribs=True, frozen=True)
+class ExifToolDatetime:
+    value: datetime.datetime
+
+    def serialize(self) -> str:
+        return self.value.strftime(EXIFTOOL_TIMESTAMP_FORMAT)
+
+
+@attr.s(auto_attribs=True, frozen=True)
+class ExifToolResult:
+    exit_code: int
+    stdout: str
+    stderr: str
+
+
+class ExifToolError(Exception):
+    pass
 
 
 def clean_metadata(file_path: str, no_backup: bool = False) -> bool:
@@ -58,9 +80,9 @@ def format_tz(tz: int) -> str:
     :rtype: str
     """
     if tz < -12:
-        raise Exception("Timezone cannot be smaller than -12:00")
+        raise ValueError("Timezone cannot be smaller than -12:00")
     if tz > 14:
-        raise Exception("Timezone cannot be higher than +14:00")
+        raise ValueError("Timezone cannot be higher than +14:00")
     result = "+" if tz >= 0 else "-"
     absolute_tz = str(abs(tz))
     if len(absolute_tz) < 2:
@@ -80,7 +102,7 @@ def parse_date_from_filename(file_path: str) -> datetime.datetime:
     """
     search_results = re.findall(r"IMG_([0-9]{8}_[0-9]{6})_([0-9]{3})", file_path)
     if len(search_results) == 0:
-        raise Exception(
+        raise ExifToolError(
             f"File name pattern not recognized while parsing date from '{file_path}' file..."
         )
     search_results = re.findall(r"IMG_([0-9]{8}_[0-9]{6})_([0-9]{3})", file_path)[0]
@@ -91,30 +113,59 @@ def parse_date_from_filename(file_path: str) -> datetime.datetime:
     return result
 
 
-def read_datetime(file_path: Path) -> Optional[str]:
-    """Return Date/Time from file, if any. Otherwise, return None."""
+def quote(text: str) -> str:
+    mark = "  > "
+    return indent(text, mark, lambda line: True)
+
+
+DATETIME_REGEX = re.compile(
+    r"Date\/Time Original\s*: (\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})"
+)
+CREATEDATE_REGEX = re.compile(
+    r"Create Date\s*: (\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})"
+)
+
+
+def parse_datetime(output: str) -> datetime.datetime:
+    if not output:
+        raise ExifToolError("Output is empty")
+
+    matches = DATETIME_REGEX.match(output)
+
+    if not matches:
+        matches = CREATEDATE_REGEX.match(output)
+
+    if not matches:
+        raise ExifToolError(
+            f"No supported timestamps found in the following output:\n{quote(output)}"
+        )
+
+    timestamp = datetime.datetime(
+        year=int(matches.group(1)),
+        month=int(matches.group(2)),
+        day=int(matches.group(3)),
+        hour=int(matches.group(4)),
+        minute=int(matches.group(5)),
+        second=int(matches.group(6)),
+    )
+
+    return timestamp
+
+
+def read_datetime(file_path: Path) -> datetime.datetime:
+    """Return Date/Time from file, if any. Otherwise, raise."""
     cmd = f'exiftool -AllDates "{file_path}"'
     completed_process = subprocess.run(cmd, capture_output=True, shell=True)
 
     if completed_process.returncode != 0:
         error_message = f"Reading date and time from {file_path!r} >>> "
         error_message += completed_process.stderr.decode("utf-8").rstrip("\n")
-        click.echo(error_message)
-        return None
+        raise ExifToolError(error_message)
 
     # Extract timestamp and format it as 'YYYY-MM-DD hh:mm:ss'
-    result = completed_process.stdout.decode("utf-8")
-    if not result:
-        return None
-
-    result = result.split("\n")[0]
-    result = ":".join(result.split(":")[1:])
-    result = result.strip()
-    result = result.split(" ")  # type: ignore
-    result = (result[0].replace(":", "-"), result[1])  # type: ignore
-    result = " ".join(result)
-
-    return result
+    output = completed_process.stdout.decode("utf-8")
+    timestamp = parse_datetime(output)
+    return timestamp
 
 
 def read_gps(file_path: Path) -> GpsCoordinates:
@@ -149,6 +200,18 @@ def write_datetime(
     formatted_date_time = f"{date_time}{tz}"
 
     cmd = f'exiftool -AllDates="{formatted_date_time}" {file_path}'
+
+    # TODO: tested in bash, and works perfectly
+    #
+    # Show all time/date related tags
+    # exiftool -a -G1 -s -time:all $FILENAME
+    #
+    # Set date
+    # FILENAME="kk.png"
+    # DATE="1990:01:01 00:00:00+08:00"
+    # exiftool -a -XMP:CreateDate="${DATE}" $FILENAME
+    # exiftool -a "-AllDates<XMP:CreateDate" $FILENAME
+
     if no_backup:
         cmd += " -overwrite_original"
     completed_process = subprocess.run(cmd, capture_output=True, shell=True)
