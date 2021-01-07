@@ -22,9 +22,10 @@ gpy meta file path/to/file/or/dir
 
 ## Install
 
+Repository developed using Python 3.9.
+
 ```shell
 make install
 ```
 
 Assumption: `exiftool` is already installed.
-
