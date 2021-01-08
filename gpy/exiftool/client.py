@@ -67,31 +67,6 @@ def clean_metadata(file_path: str, no_backup: bool = False) -> bool:
     return True
 
 
-def format_tz(tz: int) -> str:
-    """Return timezone formatted.
-
-    Example:
-      tz = -5  -->  '-05:00'
-      tz = 3   -->  '+03:00'
-
-    :param tz: timezone
-    :type tz: int
-    :returns: timezone correctly formatted
-    :rtype: str
-    """
-    if tz < -12:
-        raise ValueError("Timezone cannot be smaller than -12:00")
-    if tz > 14:
-        raise ValueError("Timezone cannot be higher than +14:00")
-    result = "+" if tz >= 0 else "-"
-    absolute_tz = str(abs(tz))
-    if len(absolute_tz) < 2:
-        absolute_tz = f"0{absolute_tz}"
-    result += absolute_tz
-    result += ":00"
-    return result
-
-
 def parse_date_from_filename(file_path: str) -> datetime.datetime:
     """Return datetime as per file name.
 
@@ -173,55 +148,49 @@ def read_gps(file_path: Path) -> GpsCoordinates:
     raise NotImplementedError("TODO > find out how pull GPS data with exiftool")
 
 
-def write_datetime(
-    file_path: Path,
-    *,
-    ts: datetime.datetime,
-    timezone: int = 0,
-    no_backup: bool = False,
-) -> bool:
+def format_timestamp(ts: datetime.datetime) -> str:
+    if not ts.tzinfo:
+        raise ExifToolError("timezone required, but none found")
+
+    formatted_timestamp = ts.strftime("%Y:%m:%d %H:%M:%S.%f")[:-3]
+    timezone = ts.isoformat()[-6:]
+
+    return f"{formatted_timestamp}{timezone}"
+
+
+def write_ts(path: Path, *, ts: datetime.datetime, backup: bool = False) -> None:
     """Write Date/Time to file.
 
     The Date/Time tag refers to the moment when the image/video was captured.
-
-    :param file_path: path of the file
-    :param ts: date and time when the file was captured
-    :param timezone: timezone of the capture
-    :param no_backup: if true, don't do backup copy of the file
-    :type file_path: str
-    :type ts: datetime.datetime
-    :type timezone: int
-    :type no_backup: bool
-    :returns: true if successful, otherwise false
-    :rtype: bool
     """
-    date_time = ts.strftime("%Y:%m:%d %H:%M:%S.%f")[:-4]
-    tz = format_tz(timezone)
-    formatted_date_time = f"{date_time}{tz}"
+    if not ts.tzinfo:
+        # TODO: get timezone info from default and log warning
+        raise NotImplementedError("TODO: handle when timezone is not present")
 
-    cmd = f'exiftool -AllDates="{formatted_date_time}" {file_path}'
+    formatted_datetime = format_timestamp(ts)
 
-    # TODO: tested in bash, and works perfectly
-    #
-    # Show all time/date related tags
-    # exiftool -a -G1 -s -time:all $FILENAME
-    #
-    # Set date
-    # FILENAME="kk.png"
-    # DATE="1990:01:01 00:00:00+08:00"
-    # exiftool -a -XMP:CreateDate="${DATE}" $FILENAME
-    # exiftool -a "-AllDates<XMP:CreateDate" $FILENAME
+    cmd_1 = f'exiftool -a -XMP:CreateDate="{formatted_datetime}" {path}'
+    cmd_2 = f'exiftool -a "-AllDates<XMP:CreateDate" {path}'
 
-    if no_backup:
-        cmd += " -overwrite_original"
-    completed_process = subprocess.run(cmd, capture_output=True, shell=True)
+    if backup is False:
+        cmd_1 += " -overwrite_original"
+        cmd_2 += " -overwrite_original"
 
-    if completed_process.returncode != 0:
-        error_message = f"Writing date and time to '{file_path}' >>> "
-        error_message += completed_process.stderr.decode("utf-8").rstrip("\n")
-        click.echo(error_message)
-        return False
-    return True
+    completed_process_1 = subprocess.run(cmd_1, capture_output=True, shell=True)
+
+    if completed_process_1.returncode != 0:
+        error_message = f"Writing date and time to '{path}' >>> "
+        error_message += completed_process_1.stderr.decode("utf-8").rstrip("\n")
+        # TODO: raise context!
+        raise ExifToolError(error_message)
+
+    completed_process_2 = subprocess.run(cmd_2, capture_output=True, shell=True)
+
+    if completed_process_2.returncode != 0:
+        error_message = f"Writing date and time to '{path}' >>> "
+        error_message += completed_process_2.stderr.decode("utf-8").rstrip("\n")
+        # TODO: raise context!
+        raise ExifToolError(error_message)
 
 
 def write_geolocation(

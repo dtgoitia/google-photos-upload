@@ -12,6 +12,7 @@ Requirements:
 
 import os
 from pathlib import Path
+from typing import Set
 
 from click.testing import CliRunner
 
@@ -73,11 +74,14 @@ def test_gpy_meta_date_fromfile_single_image(tmp_real_img):
     result3 = runner.invoke(gpy_cli, ["scan", "date", tmp_real_img])
 
     assert result1.output == expected_output1
-    assert result2.exit_code == 0
-    assert result2.output == expected_output2
-    assert result3.exit_code == 0
-    assert result3.output == expected_output3
+    assert result1.exception is None
     assert result1.exit_code == 0
+    assert result2.output == expected_output2
+    assert result2.exception is None
+    assert result2.exit_code == 0
+    assert result3.output == expected_output3
+    assert result3.exception is None
+    assert result3.exit_code == 0
 
 
 def test_gpy_meta_date_fromfile_single_video(tmp_real_vid):
@@ -95,10 +99,13 @@ def test_gpy_meta_date_fromfile_single_video(tmp_real_vid):
     result3 = runner.invoke(gpy_cli, ["scan", "date", tmp_real_vid])
 
     assert result1.output == expected_output1
+    assert result1.exception is None
     assert result1.exit_code == 0
     assert result2.output == expected_output2
+    assert result2.exception is None
     assert result2.exit_code == 0
     assert result3.output == expected_output3
+    assert result2.exception is None
     assert result3.exit_code == 0
 
 
@@ -114,6 +121,7 @@ def test_gpy_meta_date_fromfile_multiple(tmp_real_files):
 
     result1 = runner.invoke(gpy_cli, ["scan", "date", cmd_path])
     assert result1.exit_code == 0
+    assert result1.exception is None
     assert result1.output == (
         f"scanning {file_paths[0]}\n"
         "    metadata date and file timestamp don't match\n"
@@ -133,10 +141,12 @@ def test_gpy_meta_date_fromfile_multiple(tmp_real_files):
         f"writing date 2019-02-02 18:44:25.000 as metadata to {file_paths[3]}\n"
         f"writing date 2019-02-02 18:45:13.000 as metadata to {file_paths[4]}\n"
     )
+    assert result2.exception is None
     assert result2.exit_code == 0
 
     result3 = runner.invoke(gpy_cli, ["scan", "date", cmd_path])
     assert result3.output == expected_output3
+    assert result3.exception is None
     assert result3.exit_code == 0
 
 
@@ -144,42 +154,52 @@ def test_gpy_meta_date_input_single(tmp_real_img):
     """Set metadata date and time from user input for a single file."""
     runner = CliRunner()
 
+    timestamp = "2010-01-01_00:00:00.01"  # Notice only 2 decimals in millisecs
     result = runner.invoke(
-        gpy_cli, ["meta", "date", "--input=2010-01-01_00:00:00.01", tmp_real_img]
+        gpy_cli,
+        ["meta", "date", f"--input={timestamp}", tmp_real_img],
     )
 
+    parsed_timestamp = "2010-01-01 00:00:00.010"  # Notice 3 decimals in millisecs
     assert result.output == (
-        f"writing date 2010-01-01 00:00:00.010 as metadata to {tmp_real_img}\n"
+        f"writing date {parsed_timestamp} as metadata to {tmp_real_img}\n"
     )
+    assert result.exception is None
     assert result.exit_code == 0
 
 
+def get_files_in_dir(path: Path) -> Set[Path]:
+    return {path for path in path.rglob("*") if path.is_file()}
+
+
 def test_gpy_meta_date_nobackup_single(tmp_real_img):
-    path = os.path.dirname(tmp_real_img)
-    files_before = [x[2] for x in os.walk(path)][0]
+    dir_path = Path(tmp_real_img).parent
+    files_before = get_files_in_dir(dir_path)
     runner = CliRunner()
 
     result = runner.invoke(
         gpy_cli,
-        ["meta", "date", "--no-backup", "--input=2010-01-01_00:00:00", tmp_real_img],
+        ["meta", "date", "--input=2010-01-01_00:00:00", tmp_real_img],
     )
 
-    files_after = [x[2] for x in os.walk(path)][0]
-    assert len(files_before) == 1
-    assert len(files_after) == 1
+    files_after = get_files_in_dir(dir_path)
+    assert files_before == files_after
+    assert result.exception is None
     assert result.exit_code == 0
 
 
 def test_gpy_meta_date_backup_single(tmp_real_img):
-    path = os.path.dirname(tmp_real_img)
-    files_before = [x[2] for x in os.walk(path)][0]
+    dir_path = Path(tmp_real_img).parent
+    files_before = get_files_in_dir(dir_path)
     runner = CliRunner()
 
     result = runner.invoke(
-        gpy_cli, ["meta", "date", "--input=2010-01-01_00:00:00", tmp_real_img]
+        gpy_cli,
+        ["meta", "date", "--backup", "--input=2010-01-01_00:00:00", tmp_real_img],
     )
 
-    files_after = [x[2] for x in os.walk(path)][0]
+    files_after = get_files_in_dir(dir_path)
     assert len(files_before) == 1
     assert len(files_after) == 2
+    assert result.exception is None
     assert result.exit_code == 0
