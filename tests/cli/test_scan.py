@@ -1,5 +1,6 @@
 import datetime
 from pathlib import Path
+from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -100,17 +101,18 @@ def read_gps_mocked(mocker):
     ],
 )
 def test_scan_date(
-    read_datetime_mocked,
     parse_mocked,
     path,
     read_datetime_return,
     parse_return,
     expected_result,
 ):
-    read_datetime_mocked.return_value = read_datetime_return
     parse_mocked.return_value = parse_return
 
-    actual_result = scan_date(path=path)
+    mocked_client = MagicMock()
+    mocked_client.read_datetime.return_value = read_datetime_return
+
+    actual_result = scan_date(exiftool=mocked_client, path=path)
 
     assert actual_result == expected_result
 
@@ -123,9 +125,10 @@ def test_scan_date(
         (None, {"path": "random_path"}),
     ],
 )
-def test_scan_gps(read_gps_mocked, return_value, expected_result):
-    read_gps_mocked.return_value = return_value
+def test_scan_gps(return_value, expected_result):
+    mocked_client = MagicMock()
+    mocked_client.read_gps.return_value = return_value
 
-    actual_result = scan_gps(file_path=Path("random_path"))
+    actual_result = scan_gps(mocked_client, file_path=Path("random_path"))
 
     assert actual_result == expected_result
