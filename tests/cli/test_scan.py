@@ -1,10 +1,13 @@
 import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 
 from gpy.cli.scan import scan_date, scan_gps
 from gpy.types import Report
+
+TZ = ZoneInfo("Europe/Madrid")
 
 
 @pytest.fixture
@@ -83,32 +86,16 @@ def read_gps_mocked(mocker):
             ),
             id="filename_ok_and_metadata_ok_and_dates_match",
         ),
-        # TODO: handle timezone as datetime.datetime
         pytest.param(
             Path("blah/VID_20100101_160101_123.mp4"),
-            "2010-01-01 16:01:01.00+00.00",
-            # datetime.datetime(2010, 1, 1, 16, 1, 1),
+            datetime.datetime(2010, 1, 1, 16, 1, 1, tzinfo=TZ),
             datetime.datetime(2010, 1, 1, 16, 1, 1),
             Report(
                 filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
-                metadata_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
+                metadata_date=datetime.datetime(2010, 1, 1, 16, 1, 1, tzinfo=TZ),
                 path=Path("blah/VID_20100101_160101_123.mp4"),
             ),
-            id="filename_ok_and_metadata_ok_with_timezone_+0h_and_dates_match",
-            marks=[pytest.mark.skip(reason="todo: use datetime.datetime timezone")],
-        ),
-        # TODO: handle timezone as datetime.datetime
-        pytest.param(
-            Path("blah/VID_20100101_160101_123.mp4"),
-            "2010-01-01 16:01:01.00+05.00",
-            datetime.datetime(2010, 1, 1, 16, 1, 1),
-            Report(
-                filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
-                metadata_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
-                path=Path("blah/VID_20100101_160101_123.mp4"),
-            ),
-            id="filename_ok_and_metadata_ok_with_timezone_+5h_and_dates_match",
-            marks=[pytest.mark.skip(reason="todo: use datetime.datetime timezone")],
+            id="filename_ok_and_metadata_ok_with_timezone_and_dates_match",
         ),
     ],
 )
