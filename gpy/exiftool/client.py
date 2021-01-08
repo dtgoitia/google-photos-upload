@@ -11,8 +11,8 @@ from pathlib import Path
 from textwrap import indent
 
 import attr
-import click
 
+from gpy.log import log
 from gpy.types import GpsCoordinates
 
 # def exiftool() -> None:
@@ -62,7 +62,7 @@ def clean_metadata(file_path: str, no_backup: bool = False) -> bool:
     if completed_process.returncode != 0:
         error_message = f"Writing date and time to '{file_path}' >>> "
         error_message += completed_process.stderr.decode("utf-8").rstrip("\n")
-        click.echo(error_message)
+        log(error_message)
         return False
     return True
 
@@ -99,6 +99,14 @@ DATETIME_REGEX = re.compile(
 CREATEDATE_REGEX = re.compile(
     r"Create Date\s*: (\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})"
 )
+
+
+@attr.s(auto_attribs=True, frozen=True)
+class Context:
+    reason: str
+    path: Path
+    stdout: str = ""
+    stderr: str = ""
 
 
 def parse_datetime(output: str) -> datetime.datetime:
@@ -223,6 +231,6 @@ def write_geolocation(
     if completed_process.returncode != 0:
         error_message = f"Writing GPS coordinates to '{file_path}' >>> "
         error_message += completed_process.stderr.decode("utf-8").rstrip("\n")
-        click.echo(error_message)
+        log(error_message)
         return False
     return True
