@@ -18,7 +18,7 @@ def meta_group() -> None:
     pass
 
 
-@meta_group.command(name="date")
+@meta_group.command(name="date", help="Edit file metadata date and time.")
 # @click.option('--clean-all', is_flag=True, default=False, help='remove all metadata')
 @click.option(
     "--backup",
@@ -26,7 +26,6 @@ def meta_group() -> None:
     default=False,
     help="keep a backup copy of the edited file",
 )
-# @click.option('--timezone', default=0, help='')  # TODO
 @click.option(
     "--from-filename",
     is_flag=True,
@@ -41,30 +40,51 @@ def meta_date_command(
     input: Optional[str],
     backup: bool,
 ) -> None:
-    """Edit file metadata date and time."""
-    meta_date = None
-    if input and from_filename:
+    edit_metadata_datetime(
+        path=Path(path),
+        read_datetime_from_filename=from_filename,
+        input=input,
+        backup=backup,
+    )
+
+
+def edit_metadata_datetime(
+    path: Path,
+    read_datetime_from_filename: bool,
+    input: Optional[str],
+    backup: bool,
+) -> None:
+    metadata_datetime: Optional[datetime.datetime] = None
+
+    if input and read_datetime_from_filename:
         log(
-            "ORDER CONFLICT. Which date should I use? The date you've input or "
-            "the file name one?"
+            "COMMAND OPTION CONFLICT. "
+            "Please specify either --input or --from-filename, but not both"
         )
         return
-    if input:
-        # TODO: unify date parsers!
-        input_date = input_to_datetime(input)
-        if input_date and not input_date.tzinfo:
-            meta_date = set_timezone_to_default(input_date)
-        else:
-            meta_date = input_date
 
-    for file_path in get_paths_recursive(root_path=Path(path)):
-        if not input and from_filename:
-            filename_date = parse_datetime(file_path.name)
+    if input:
+        input_datetime = input_to_datetime(input)
+        if input_datetime and not input_datetime.tzinfo:
+            input_datetime = set_timezone_to_default(input_datetime)
+        metadata_datetime = input_datetime
+
+    for path in get_paths_recursive(root_path=Path(path)):
+        if read_datetime_from_filename:
+            filename_date = parse_datetime(path.name)
             if filename_date and not filename_date.tzinfo:
                 filename_date = set_timezone_to_default(filename_date)
-            meta_date = filename_date
-        if meta_date:
-            edit_date(file_path, meta_date, backup)
+            metadata_datetime = filename_date
+
+        formatted_date = metadata_datetime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        log(
+            f"writing date {formatted_date} as metadata to {path}",
+            fg="bright_black",
+        )
+        try:
+            exiftool.write_ts(path, ts=metadata_datetime, backup=backup)
+        except ExifToolError as exc:
+            log(exc.args[0])
 
 
 def set_timezone_to_default(ts: datetime.datetime) -> datetime.datetime:
@@ -73,16 +93,6 @@ def set_timezone_to_default(ts: datetime.datetime) -> datetime.datetime:
         ts.time(),
         tzinfo=config.DEFAULT_ZONEINFO,
     )
-
-
-def edit_date(file_path: Path, ts: datetime.datetime, backup: bool) -> None:
-    """Write date and time to file metadata."""
-    formatted_date = ts.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    log(f"writing date {formatted_date} as metadata to {file_path}", fg="bright_black")
-    try:
-        exiftool.write_ts(file_path, ts=ts, backup=backup)
-    except ExifToolError as exc:
-        log(exc.args[0])
 
 
 def input_to_datetime(input: str) -> datetime.datetime:
