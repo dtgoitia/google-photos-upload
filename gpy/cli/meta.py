@@ -9,7 +9,7 @@ from gpy.exiftool import client as exiftool
 from gpy.exiftool.client import ExifToolError
 from gpy.filesystem import get_paths_recursive
 from gpy.log import log
-from gpy.parsers.filenames import get_datetime_from_filename
+from gpy.parsers.filenames import parse_datetime
 
 
 @click.group(name="meta")
@@ -59,7 +59,7 @@ def meta_date_command(
 
     for file_path in get_paths_recursive(root_path=Path(path)):
         if not input and from_filename:
-            filename_date = get_datetime_from_filename(file_path.name)
+            filename_date = parse_datetime(file_path.name)
             if filename_date and not filename_date.tzinfo:
                 filename_date = set_timezone_to_default(filename_date)
             meta_date = filename_date

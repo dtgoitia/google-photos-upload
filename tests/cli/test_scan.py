@@ -14,7 +14,7 @@ TZ = ZoneInfo("Europe/Madrid")
 @pytest.fixture
 def parse_mocked(mocker):
     # TODO: refactor to avoid monkey-patching and use DI instead
-    return mocker.patch("gpy.parsers.filenames.get_datetime_from_filename")
+    return mocker.patch("gpy.parsers.filenames.parse_datetime")
 
 
 @pytest.fixture
