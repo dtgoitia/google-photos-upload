@@ -4,9 +4,9 @@ from typing import Any  # TODO: find namespace type
 import click
 
 from gpy.exiftool import client as exiftool_client
+from gpy.filenames import parse_datetime
 from gpy.filesystem import get_paths_recursive
 from gpy.log import log, print_report
-from gpy.parsers.filenames import parse_datetime
 from gpy.types import Report
 
 

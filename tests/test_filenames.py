@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-from gpy.parsers.filenames import parse_datetime
+from gpy.filenames import parse_datetime
 
 
 @pytest.mark.parametrize(

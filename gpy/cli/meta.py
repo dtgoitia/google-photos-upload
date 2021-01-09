@@ -7,9 +7,9 @@ import click
 from gpy import config
 from gpy.exiftool import client as exiftool
 from gpy.exiftool.client import ExifToolError
+from gpy.filenames import parse_datetime
 from gpy.filesystem import get_paths_recursive
 from gpy.log import log
-from gpy.parsers.filenames import parse_datetime
 
 
 @click.group(name="meta")
