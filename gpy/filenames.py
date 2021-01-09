@@ -1,7 +1,9 @@
 """This module contains the logic to parse dates from file names."""
 import datetime
 import re
-from typing import Optional
+from typing import Callable, Optional
+
+DatetimeParser = Callable[[str], Optional[datetime.datetime]]
 
 
 def parse_datetime(file_name: str) -> Optional[datetime.datetime]:

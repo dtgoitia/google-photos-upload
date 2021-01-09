@@ -11,26 +11,8 @@ from gpy.types import Report
 TZ = ZoneInfo("Europe/Madrid")
 
 
-@pytest.fixture
-def parse_mocked(mocker):
-    # TODO: refactor to avoid monkey-patching and use DI instead
-    return mocker.patch("gpy.filenames.parse_datetime")
-
-
-@pytest.fixture
-def read_datetime_mocked(mocker):
-    # TODO: refactor to avoid monkey-patching and use DI instead
-    return mocker.patch("gpy.exiftool.client.read_datetime")
-
-
-@pytest.fixture
-def read_gps_mocked(mocker):
-    # TODO: refactor to avoid monkey-patching and use DI instead
-    return mocker.patch("gpy.exiftool.client.read_gps")
-
-
 @pytest.mark.parametrize(
-    ("path", "read_datetime_return", "parse_return", "expected_result"),
+    ("path", "filename_datetime", "metadata_datetime", "expected_result"),
     [
         pytest.param(
             Path("blah/foo.mp4"),
@@ -45,8 +27,8 @@ def read_gps_mocked(mocker):
         ),
         pytest.param(
             Path("blah/foo.mp4"),
-            datetime.datetime(2010, 1, 1, 16, 1, 1),
             None,
+            datetime.datetime(2010, 1, 1, 16, 1, 1),
             Report(
                 filename_date=None,
                 metadata_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
@@ -56,8 +38,8 @@ def read_gps_mocked(mocker):
         ),
         pytest.param(
             Path("blah/VID_20100101_160101_123.mp4"),
-            None,
             datetime.datetime(2010, 1, 1, 16, 1, 1),
+            None,
             Report(
                 filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
                 metadata_date=None,
@@ -67,8 +49,8 @@ def read_gps_mocked(mocker):
         ),
         pytest.param(
             Path("blah/VID_20100101_160101_123.mp4"),
-            datetime.datetime(2012, 2, 2, 17, 2, 2),
             datetime.datetime(2010, 1, 1, 16, 1, 1),
+            datetime.datetime(2012, 2, 2, 17, 2, 2),
             Report(
                 filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
                 metadata_date=datetime.datetime(2012, 2, 2, 17, 2, 2),
@@ -89,8 +71,8 @@ def read_gps_mocked(mocker):
         ),
         pytest.param(
             Path("blah/VID_20100101_160101_123.mp4"),
-            datetime.datetime(2010, 1, 1, 16, 1, 1, tzinfo=TZ),
             datetime.datetime(2010, 1, 1, 16, 1, 1),
+            datetime.datetime(2010, 1, 1, 16, 1, 1, tzinfo=TZ),
             Report(
                 filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
                 metadata_date=datetime.datetime(2010, 1, 1, 16, 1, 1, tzinfo=TZ),
@@ -100,34 +82,33 @@ def read_gps_mocked(mocker):
         ),
     ],
 )
-def test_scan_date(
-    parse_mocked,
-    path,
-    read_datetime_return,
-    parse_return,
-    expected_result,
-):
-    parse_mocked.return_value = parse_return
+def test_scan_date(path, filename_datetime, metadata_datetime, expected_result):
+    parser_mock = MagicMock()
+    parser_mock.return_value = filename_datetime
 
-    mocked_client = MagicMock()
-    mocked_client.read_datetime.return_value = read_datetime_return
+    exiftool_client_mock = MagicMock()
+    exiftool_client_mock.read_datetime.return_value = metadata_datetime
 
-    actual_result = scan_date(exiftool=mocked_client, path=path)
+    actual_result = scan_date(
+        exiftool=exiftool_client_mock,
+        parse_datetime=parser_mock,
+        path=path,
+    )
 
     assert actual_result == expected_result
 
 
 @pytest.mark.skip(reason="not implemented")
 @pytest.mark.parametrize(
-    ("return_value", "expected_result"),
+    ("metadata_gps", "expected_result"),
     [
         ("random_coords", {"path": "random_path", "gps": "random_coords"}),
         (None, {"path": "random_path"}),
     ],
 )
-def test_scan_gps(return_value, expected_result):
+def test_scan_gps(metadata_gps, expected_result):
     mocked_client = MagicMock()
-    mocked_client.read_gps.return_value = return_value
+    mocked_client.read_gps.return_value = metadata_gps
 
     actual_result = scan_gps(mocked_client, file_path=Path("random_path"))
 
