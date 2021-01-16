@@ -76,6 +76,7 @@ def edit_metadata_datetime(
                 filename_date = set_timezone_to_default(filename_date)
             metadata_datetime = filename_date
 
+        assert metadata_datetime
         formatted_date = metadata_datetime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         log(
             f"writing date {formatted_date} as metadata to {path}",
