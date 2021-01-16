@@ -4,6 +4,7 @@ cattrs
 click
 colored
 flake8
+google-auth-oauthlib
 ipdb
 isort
 mypy
