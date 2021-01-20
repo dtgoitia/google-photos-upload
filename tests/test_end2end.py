@@ -11,12 +11,22 @@ Requirements:
 """
 
 import os
+import subprocess
 from pathlib import Path
 from typing import Set
 
 from click.testing import CliRunner
 
 from gpy.cli.cli import gpy_cli
+
+
+def test_exiftool_is_installed():
+    process = subprocess.run("exiftool -ver", capture_output=True, shell=True)
+
+    assert process.returncode == 0, "exiftool is not installed"
+
+    version = process.stdout.decode().strip()
+    assert version == "12.15", "exiftool version is not the expected one"
 
 
 def test_gpy_scan_date_single(tmp_real_img):
