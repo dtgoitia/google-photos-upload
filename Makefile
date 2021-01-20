@@ -1,3 +1,6 @@
+work:
+	bash work.sh
+
 requirements.txt:
 	pip-compile --no-header --no-emit-index-url --verbose requirements.in --output-file requirements.txt
 
