@@ -26,17 +26,35 @@ def mock_dir(tmp_path: PosixPath) -> Path:
 
 
 @pytest.mark.parametrize(
-    ("file_path", "output"),
+    ("extension"),
     [
-        pytest.param(Path("file/absolute/path.jpg"), True, id="jpg"),
-        pytest.param(Path("file/absolute/path.png"), True, id="png"),
-        pytest.param(Path("file/absolute/path.mp4"), True, id="mp4"),
-        pytest.param(Path("file/absolute/path.3gp"), True, id="3gp"),
-        pytest.param(Path("file/absolute/path.gif"), False, id="gif"),
+        "jpg",
+        "png",
+        "mp4",
+        "3gp",
     ],
 )
-def test_is_supported(file_path, output):
-    assert is_supported(file_path) == output
+def test_supported_files(extension):
+    path = Path(f"file/absolute/path.{extension}")
+    assert is_supported(path) is True
+
+    path = Path(f"file/absolute/path.{extension.upper()}")
+    assert is_supported(path) is True
+
+
+@pytest.mark.parametrize(
+    ("extension"),
+    [
+        "gif",
+        "GIF",
+    ],
+)
+def test_unsupported_files(extension):
+    path = Path(f"file/absolute/path.{extension}")
+    assert is_supported(path) is False
+
+    path = Path(f"file/absolute/path.{extension.upper()}")
+    assert is_supported(path) is False
 
 
 def test_get_paths_recursive_directory(mock_dir):

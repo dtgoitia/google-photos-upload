@@ -3,7 +3,7 @@ from typing import Iterator
 
 
 def is_supported(path: Path) -> bool:
-    return path.suffix in (".jpg", ".png", ".mp4", ".3gp")
+    return path.suffix.lower() in (".jpg", ".png", ".mp4", ".3gp")
 
 
 def get_paths_recursive(*, root_path: Path) -> Iterator[Path]:
