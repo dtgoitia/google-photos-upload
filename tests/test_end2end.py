@@ -26,7 +26,8 @@ def test_exiftool_is_installed():
     assert process.returncode == 0, "exiftool is not installed"
 
     version = process.stdout.decode().strip()
-    assert version == "12.15", "exiftool version is not the expected one"
+    mayor, _ = version.split(".")
+    assert mayor == "12", "exiftool version is not the expected one"
 
 
 def test_gpy_scan_date_single(tmp_real_img):
