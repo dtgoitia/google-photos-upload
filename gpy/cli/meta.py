@@ -1,4 +1,5 @@
 import datetime
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -9,7 +10,8 @@ from gpy.exiftool import client as exiftool
 from gpy.exiftool.client import ExifToolError
 from gpy.filenames import parse_datetime
 from gpy.filesystem import get_paths_recursive
-from gpy.log import log
+
+logger = logging.getLogger(__name__)
 
 
 @click.group(name="meta")
@@ -57,7 +59,7 @@ def edit_metadata_datetime(
     metadata_datetime: Optional[datetime.datetime] = None
 
     if input and read_datetime_from_filename:
-        log(
+        logger.error(
             "COMMAND OPTION CONFLICT. "
             "Please specify either --input or --from-filename, but not both"
         )
@@ -78,14 +80,13 @@ def edit_metadata_datetime(
 
         assert metadata_datetime
         formatted_date = metadata_datetime.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        log(
+        logger.info(
             f"writing date {formatted_date} as metadata to {path}",
-            fg="bright_black",
         )
         try:
             exiftool.write_ts(path, ts=metadata_datetime, backup=backup)
         except ExifToolError as exc:
-            log(exc.args[0])
+            logger.warning(exc.args[0])
 
 
 def set_timezone_to_default(ts: datetime.datetime) -> datetime.datetime:
@@ -108,4 +109,5 @@ def input_to_datetime(input: str) -> datetime.datetime:
             pass
 
     msg = "ERROR: provided input doesn't have the required format (YYYY-MM-DD_hh:mm:ss.ms)"
+    logger.error(msg)
     raise Exception(msg)

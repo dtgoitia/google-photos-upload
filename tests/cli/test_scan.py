@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from gpy.cli.scan import scan_date, scan_gps
+from gpy.cli.scan import _scan_date, scan_gps
 from gpy.types import Report
 
 TZ = ZoneInfo("Europe/Madrid")
@@ -82,14 +82,19 @@ TZ = ZoneInfo("Europe/Madrid")
         ),
     ],
 )
-def test_scan_date(path, filename_datetime, metadata_datetime, expected_result):
+def test_scan_single_file_date(
+    path: Path,
+    filename_datetime: datetime.datetime,
+    metadata_datetime: datetime.datetime,
+    expected_result: Report,
+) -> None:
     parser_mock = MagicMock()
     parser_mock.return_value = filename_datetime
 
     exiftool_client_mock = MagicMock()
     exiftool_client_mock.read_datetime.return_value = metadata_datetime
 
-    actual_result = scan_date(
+    actual_result = _scan_date(
         exiftool=exiftool_client_mock,
         parse_datetime=parser_mock,
         path=path,

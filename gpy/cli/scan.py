@@ -1,5 +1,6 @@
+import logging
 from pathlib import Path
-from typing import Any  # TODO: find namespace type
+from typing import Any, List  # TODO: find namespace type
 
 import click
 
@@ -7,8 +8,9 @@ from gpy.exiftool import client as exiftool_client
 from gpy.filenames import DatetimeParser
 from gpy.filenames import parse_datetime as datetime_parser
 from gpy.filesystem import get_paths_recursive
-from gpy.log import log, print_report
-from gpy.types import Report
+from gpy.types import Report, print_report
+
+logger = logging.getLogger(__name__)
 
 
 @click.group(name="scan")
@@ -19,7 +21,7 @@ def scan_group() -> None:
 
 @scan_group.command(name="date")
 @click.argument("path", type=click.Path(exists=True))
-def scan_date_command(path):
+def scan_date_command(path: Path) -> None:
     """Scan files and directories.
 
     Scan files and directories looking and report:
@@ -27,25 +29,29 @@ def scan_date_command(path):
      - Date tag: the supported file does/doesn't have date tag.
      - GPS tag: the supported file does/doesn't have GPS tag.
     """
-    file_paths = get_paths_recursive(root_path=Path(path))
-
-    for path in file_paths:
-        report = scan_date(exiftool_client, datetime_parser, path)
-        print_report(report)
+    scan_date(exiftool_client, datetime_parser, path)
 
 
-def scan_date(exiftool: Any, parse_datetime: DatetimeParser, path: Path) -> Report:
-    """Scan file date and time metadata."""
-    log(f"scanning {path}", fg="bright_black")
+def scan_date(exiftool: Any, parse_datetime: DatetimeParser, dir: Path) -> List[Report]:
+    file_paths = get_paths_recursive(root_path=Path(dir))
+
+    return [_scan_date(exiftool, parse_datetime, path) for path in file_paths]
+
+
+def _scan_date(exiftool: Any, parse_datetime: DatetimeParser, path: Path) -> Report:
+    logger.info(f"scanning {path}")
 
     filename_date = parse_datetime(path.name)
     metadata_date = exiftool.read_datetime(path)
 
-    return Report(path, filename_date, metadata_date)
+    logger.debug("reporting date scan")
+    report = Report(path, filename_date, metadata_date)
+    print_report(report)
+
+    return report
 
 
 def scan_gps(exiftool: Any, file_path: Path) -> Report:
-    """Scan file geolocation related metadata."""
-    log(f"scanning {file_path}", fg="bright_black")
+    logger.info(f"scanning {file_path}")
     gps = exiftool.read_gps(file_path)
     return Report(path=file_path, gps=gps)
