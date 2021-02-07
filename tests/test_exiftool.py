@@ -31,6 +31,7 @@ class MockSubprocess:
         # ),
         pytest.param(
             (
+                "some random text above the dates\n"
                 "Date/Time Original              : 2019:02:02 18:44:43\n"
                 "Create Date                     : 2019:02:02 18:44:44\n"
                 "Modify Date                     : 2019:02:02 18:44:45\n"

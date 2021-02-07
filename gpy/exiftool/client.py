@@ -93,9 +93,11 @@ def quote(text: str) -> str:
     return indent(text, mark, lambda line: True)
 
 
+# Date/Time Original          : 2012:02:02 18:44:43
 DATETIME_REGEX = re.compile(
     r"Date\/Time Original\s*: (\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})"
 )
+# Create Date                 : 2012:02:02 18:44:43
 CREATEDATE_REGEX = re.compile(
     r"Create Date\s*: (\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})"
 )
@@ -113,10 +115,10 @@ def parse_datetime(output: str) -> datetime.datetime:
     if not output:
         raise ExifToolError("Output is empty")
 
-    matches = DATETIME_REGEX.match(output)
+    matches = DATETIME_REGEX.search(output)
 
     if not matches:
-        matches = CREATEDATE_REGEX.match(output)
+        matches = CREATEDATE_REGEX.search(output)
 
     if not matches:
         raise ExifToolError(
