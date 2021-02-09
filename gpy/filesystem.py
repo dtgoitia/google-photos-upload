@@ -25,10 +25,14 @@ def get_paths_recursive(*, root_path: Path) -> Iterator[Path]:
             return
     else:
         logger.debug(f"{root_path} is a directory, scanning folders recursively...")
-        for path in sorted(root_path.rglob("*")):
-            if path.is_file():
-                if is_supported(path):
-                    logger.debug(f"{path} is a supported file")
-                    yield path
-                else:
-                    logger.debug(f"{path} is an unsupported file")
+
+        files_and_dirs = sorted(root_path.rglob("*"))
+        files = (path for path in files_and_dirs if path.is_file())
+
+        for path in files:
+            if not is_supported(path):
+                logger.debug(f"{path} is an unsupported file")
+                continue
+
+            logger.debug(f"{path} is a supported file")
+            yield path
