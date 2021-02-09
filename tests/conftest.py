@@ -7,7 +7,7 @@ from typing import Callable, List
 
 import pytest
 
-TmpFileCreator = Callable[[str], str]
+TmpFileCreator = Callable[[str], Path]
 
 
 @pytest.fixture
@@ -26,20 +26,20 @@ def create_tmp_file(tmp_path: PosixPath, fixtures_dir: Path) -> TmpFileCreator:
     copied as-is, preserving any metadata the file might contain.
     """
 
-    def file_copier(file_name: str) -> str:
+    def file_copier(file_name: str) -> Path:
         """."""
         source_path = fixtures_dir / file_name
         new_fixture_path = tmp_path / file_name
 
         shutil.copy(src=source_path, dst=new_fixture_path)
 
-        return str(new_fixture_path)  # TODO: return Path, not str
+        return new_fixture_path
 
     return file_copier
 
 
 @pytest.fixture
-def tmp_real_img(create_tmp_file: TmpFileCreator) -> str:
+def tmp_real_img(create_tmp_file: TmpFileCreator) -> Path:
     """Copy an image to the temporary testing directory.
 
     This image is a real file which contain origina metadata, preserved without
@@ -49,7 +49,7 @@ def tmp_real_img(create_tmp_file: TmpFileCreator) -> str:
 
 
 @pytest.fixture
-def tmp_real_vid(create_tmp_file: TmpFileCreator) -> str:
+def tmp_real_vid(create_tmp_file: TmpFileCreator) -> Path:
     """Copy a video to the temporary testing directory.
 
     This video is a real files which contain origina metadata, preserved
@@ -59,7 +59,7 @@ def tmp_real_vid(create_tmp_file: TmpFileCreator) -> str:
 
 
 @pytest.fixture
-def tmp_real_files(create_tmp_file: TmpFileCreator) -> List[str]:
+def tmp_real_files(create_tmp_file: TmpFileCreator) -> List[Path]:
     """Copy the static files over to the temporary testing directory.
 
     The static files are real images which contain origina metadata, preserved
