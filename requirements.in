@@ -2,6 +2,7 @@ attrs
 # cattrs
 black
 click
+colored
 flake8
 ipdb
 isort

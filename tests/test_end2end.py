@@ -50,9 +50,9 @@ def test_gpy_scan_date_single(tmp_real_img: Path, caplog: LogCapture) -> None:
     printed_output = "\n".join(caplog.messages)
     assert printed_output == (
         f"scanning {tmp_real_img}\n"
-        "    metadata date and file timestamp don't match:\n"
-        "      > metadata: 2019-02-02 18:44:43.000\n"
-        "      > filename: 2019-02-02 18:44:42.000"
+        "  metadata date and file timestamp don't match\n"
+        "    > metadata: 2019-02-02 18:44:43.000\n"
+        "    > filename: 2019-02-02 18:44:42.000"
     )
 
 
@@ -97,17 +97,17 @@ def test_gpy_scan_date_multiple(tmp_real_files: List[Path], caplog: LogCapture) 
     printed_output = "\n".join(caplog.messages)
     assert printed_output == (
         f"scanning {img_1}\n"
-        "    metadata date and file timestamp don't match:\n"
-        "      > metadata: 2019-02-02 18:44:43.000\n"
-        "      > filename: 2019-02-02 18:44:42.000\n"
+        "  metadata date and file timestamp don't match\n"
+        "    > metadata: 2019-02-02 18:44:43.000\n"
+        "    > filename: 2019-02-02 18:44:42.000\n"
         f"scanning {img_2}\n"
-        "    metadata date and file timestamp don't match:\n"
-        "      > metadata: 2019-02-02 18:44:58.000\n"
-        "      > filename: 2019-02-02 18:44:49.000\n"
+        "  metadata date and file timestamp don't match\n"
+        "    > metadata: 2019-02-02 18:44:58.000\n"
+        "    > filename: 2019-02-02 18:44:49.000\n"
         f"scanning {img_3}\n"
-        "    metadata date and file timestamp don't match:\n"
-        "      > metadata: 2019-02-02 18:45:21.000\n"
-        "      > filename: 2019-02-02 18:45:20.000\n"
+        "  metadata date and file timestamp don't match\n"
+        "    > metadata: 2019-02-02 18:45:21.000\n"
+        "    > filename: 2019-02-02 18:45:20.000\n"
         f"scanning {vid_1}\n"
         f"scanning {vid_2}"
     )
@@ -151,9 +151,9 @@ def test_gpy_meta_date_fromfile_single_image(
     printed_output = "\n".join(caplog.messages)
     assert printed_output == (
         f"scanning {tmp_real_img}\n"
-        "    metadata date and file timestamp don't match:\n"
-        "      > metadata: 2019-02-02 18:44:43.000\n"
-        "      > filename: 2019-02-02 18:44:42.000\n"
+        "  metadata date and file timestamp don't match\n"
+        "    > metadata: 2019-02-02 18:44:43.000\n"
+        "    > filename: 2019-02-02 18:44:42.000\n"
         f"writing date 2019-02-02 18:44:42.000 as metadata to {tmp_real_img}\n"
         f"scanning {tmp_real_img}"
     )
@@ -182,17 +182,17 @@ def test_gpy_meta_date_fromfile_multiple(
     printed_output = "\n".join(caplog.messages)
     assert printed_output == (
         f"scanning {img_1}\n"
-        "    metadata date and file timestamp don't match:\n"
-        "      > metadata: 2019-02-02 18:44:43.000\n"
-        "      > filename: 2019-02-02 18:44:42.000\n"
+        "  metadata date and file timestamp don't match\n"
+        "    > metadata: 2019-02-02 18:44:43.000\n"
+        "    > filename: 2019-02-02 18:44:42.000\n"
         f"scanning {img_2}\n"
-        "    metadata date and file timestamp don't match:\n"
-        "      > metadata: 2019-02-02 18:44:58.000\n"
-        "      > filename: 2019-02-02 18:44:49.000\n"
+        "  metadata date and file timestamp don't match\n"
+        "    > metadata: 2019-02-02 18:44:58.000\n"
+        "    > filename: 2019-02-02 18:44:49.000\n"
         f"scanning {img_3}\n"
-        "    metadata date and file timestamp don't match:\n"
-        "      > metadata: 2019-02-02 18:45:21.000\n"
-        "      > filename: 2019-02-02 18:45:20.000\n"
+        "  metadata date and file timestamp don't match\n"
+        "    > metadata: 2019-02-02 18:45:21.000\n"
+        "    > filename: 2019-02-02 18:45:20.000\n"
         f"scanning {vid_1}\n"
         f"scanning {vid_2}\n"
         f"writing date 2019-02-02 18:44:42.000 as metadata to {img_1}\n"
@@ -225,14 +225,14 @@ def test_gpy_meta_date_input_single(tmp_real_img: Path, caplog: LogCapture) -> N
     printed_output = "\n".join(caplog.messages)
     assert printed_output == (
         f"scanning {tmp_real_img}\n"
-        "    metadata date and file timestamp don't match:\n"
-        "      > metadata: 2019-02-02 18:44:43.000\n"
-        "      > filename: 2019-02-02 18:44:42.000\n"
+        "  metadata date and file timestamp don't match\n"
+        "    > metadata: 2019-02-02 18:44:43.000\n"
+        "    > filename: 2019-02-02 18:44:42.000\n"
         f"writing date 2010-01-01 00:00:00.010 as metadata to {tmp_real_img}\n"
         f"scanning {tmp_real_img}\n"
-        "    metadata date and file timestamp don't match:\n"
-        "      > metadata: 2010-01-01 00:00:00.000\n"
-        "      > filename: 2019-02-02 18:44:42.000"
+        "  metadata date and file timestamp don't match\n"
+        "    > metadata: 2010-01-01 00:00:00.000\n"
+        "    > filename: 2019-02-02 18:44:42.000"
     )
 
 

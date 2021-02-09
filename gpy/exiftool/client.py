@@ -5,6 +5,7 @@
 # Create a wrapper function which detects via filename and writes the metadata
 
 import datetime
+import logging
 import re
 import subprocess
 from pathlib import Path
@@ -12,13 +13,14 @@ from textwrap import indent
 
 import attr
 
-from gpy.log import log
 from gpy.types import GpsCoordinates
 
 # def exiftool() -> None:
 #     write_geolocation('test.jpg', north=43.0, west=-79.0)
 #     write_datetime('test.jpg', year=2018, month=12, day=31, h=20, m=55, s=42, ms=2, timezone=-5)
 #     parse_date_from_filename('IMG_20190101_085024_277.jpg')
+
+logger = logging.getLogger(__name__)
 
 EXIFTOOL_TIMESTAMP_FORMAT = "%Y-%m-%d %h:%M:%s"
 
@@ -62,7 +64,7 @@ def clean_metadata(file_path: str, no_backup: bool = False) -> bool:
     if completed_process.returncode != 0:
         error_message = f"Writing date and time to '{file_path}' >>> "
         error_message += completed_process.stderr.decode("utf-8").rstrip("\n")
-        log(error_message)
+        logging.error(error_message)
         return False
     return True
 
@@ -233,6 +235,6 @@ def write_geolocation(
     if completed_process.returncode != 0:
         error_message = f"Writing GPS coordinates to '{file_path}' >>> "
         error_message += completed_process.stderr.decode("utf-8").rstrip("\n")
-        log(error_message)
+        logger.error(error_message)
         return False
     return True

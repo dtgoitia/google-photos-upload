@@ -61,16 +61,16 @@ def print_report(report: Report) -> None:
     """Print on screen a report dictionary."""
 
     if report.filename_date is None and report.metadata_date is None:
-        logger.info("    timestamp not found in metadata or filename")
+        logger.info("  timestamp not found in metadata or filename")
     elif report.filename_date is not None and report.metadata_date is None:
-        logger.info("    timestamp found in filename, but not in metadata")
+        logger.info("  timestamp found in filename, but not in metadata")
     elif report.filename_date is None and report.metadata_date is not None:
-        logger.debug("    OK: timestamp found in metadata, but not in filename")
+        logger.debug("  OK: timestamp found in metadata, but not in filename")
     elif not report.dates_match:
         logger.info(
-            "    metadata date and file timestamp don't match:\n"
-            f"      > metadata: {report.fmt_metadata_date}\n"
-            f"      > filename: {report.fmt_filename_date}"
+            "  metadata date and file timestamp don't match\n"
+            f"    > metadata: {report.fmt_metadata_date}\n"
+            f"    > filename: {report.fmt_filename_date}"
         )
     elif report.filename_date == report.metadata_date:
         logger.debug("    OK: matching timestamp found in filename and in metadata")

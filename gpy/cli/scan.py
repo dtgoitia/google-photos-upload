@@ -21,7 +21,7 @@ def scan_group() -> None:
 
 @scan_group.command(name="date")
 @click.argument("path", type=click.Path(exists=True))
-def scan_date_command(path: Path) -> None:
+def scan_date_command(path: str) -> None:
     """Scan files and directories.
 
     Scan files and directories looking and report:
@@ -29,7 +29,7 @@ def scan_date_command(path: Path) -> None:
      - Date tag: the supported file does/doesn't have date tag.
      - GPS tag: the supported file does/doesn't have GPS tag.
     """
-    scan_date(exiftool_client, datetime_parser, path)
+    scan_date(exiftool_client, datetime_parser, Path(path))
 
 
 def scan_date(exiftool: Any, parse_datetime: DatetimeParser, dir: Path) -> List[Report]:
@@ -43,8 +43,9 @@ def _scan_date(exiftool: Any, parse_datetime: DatetimeParser, path: Path) -> Rep
 
     filename_date = parse_datetime(path.name)
     metadata_date = exiftool.read_datetime(path)
+    logger.debug("scan successfully completed")
 
-    logger.debug("reporting date scan")
+    logger.debug("reporting scanned dates...")
     report = Report(path, filename_date, metadata_date)
     print_report(report)
 

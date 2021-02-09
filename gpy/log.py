@@ -1,19 +1,23 @@
-from typing import Optional
+import logging
+from logging import LogRecord
 
-import click
+import colored
+from colored import stylize
 
-from gpy.types import Report
-
-
-def print_report(report: Report) -> None:
-    """Print on screen a report dictionary."""
-    if not report.dates_match:
-        log("    metadata date and file timestamp don't match")
+logger = logging.getLogger(__name__)
 
 
-def log(s: str, fg: Optional[str] = None) -> None:
-    """Log with colour."""
-    click.echo(click.style(s, fg=fg))
+class ConditionalFormatter(logging.Formatter):
+    # https://stackoverflow.com/questions/1343227/can-pythons-logging-format-be-modified-depending-on-the-message-log-level
+    # https://github.com/pygments/pygments
+    def format(self, record: LogRecord) -> str:
+        message = record.msg
+
+        if record.levelno == logging.DEBUG:
+            coloured = stylize(message, colored.fg("dark_gray"))
+            return coloured
+        else:
+            return message
 
 
 # TODO:
