@@ -1,6 +1,6 @@
 attrs
-# cattrs
 black
+cattrs
 click
 colored
 flake8
