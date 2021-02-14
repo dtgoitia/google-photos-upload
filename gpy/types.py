@@ -79,6 +79,10 @@ class Report:  # TODO: rename Report --> MediaMetadata
         assert self.metadata_date
         return _format_datetime(self.metadata_date)
 
+    @property
+    def has_google_date(self) -> bool:
+        return self.google_date is not None
+
 
 def _compare_dates(a: Optional[datetime], b: Optional[datetime]) -> bool:
     if not (a and b):

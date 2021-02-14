@@ -90,3 +90,18 @@ def test_unstructure_datetime():
     data = unstructure(d)
 
     assert data == "2000-01-01T13:45:02.000001"
+
+
+def test_report_has_google_date():
+    report = Report(
+        path=Path("foo/bar.mp4"),
+        google_date=datetime.datetime(2019, 2, 2, 18, 44, 42, 1),
+    )
+
+    assert report.has_google_date is True
+
+
+def test_report_has_no_google_date():
+    report = Report(path=Path("foo/bar.mp4"))
+
+    assert report.has_google_date is False

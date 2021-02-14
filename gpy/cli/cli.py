@@ -5,6 +5,7 @@ import click
 
 from gpy.cli.meta import meta_group
 from gpy.cli.scan import scan_group
+from gpy.cli.upload_report import upload_report_command
 from gpy.log import ConditionalFormatter
 
 
@@ -23,3 +24,4 @@ def gpy_cli(debug: bool) -> None:
 
 gpy_cli.add_command(meta_group)
 gpy_cli.add_command(scan_group)
+gpy_cli.add_command(upload_report_command)
