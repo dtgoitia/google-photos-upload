@@ -5,8 +5,19 @@ from pathlib import Path
 from typing import Any, Optional
 
 import attr
+import cattr
+
+converter = cattr.Converter()
+unstructure = converter.unstructure
 
 logger = logging.getLogger(__name__)
+
+
+def unstructure_path(p: Path) -> str:
+    return str(p)
+
+
+converter.register_unstructure_hook(Path, unstructure_path)
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -26,6 +37,13 @@ def _format_datetime(d: datetime) -> str:
 
     result = f'{d.strftime("%Y-%m-%d %H:%M:%S")}.{milliseconds:03}'
     return result
+
+
+def unstructure_datetime(d: datetime) -> str:
+    return _format_datetime(d)
+
+
+converter.register_unstructure_hook(datetime, unstructure_datetime)
 
 
 @attr.s(auto_attribs=True, frozen=True)
