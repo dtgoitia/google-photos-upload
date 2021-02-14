@@ -1,6 +1,9 @@
+import json
 import logging
 from pathlib import Path
-from typing import Iterator
+from typing import Any, Dict, Iterator, List
+
+from gpy.types import Report, unstructure
 
 logger = logging.getLogger(__name__)
 
@@ -36,3 +39,15 @@ def get_paths_recursive(*, root_path: Path) -> Iterator[Path]:
 
             logger.debug(f"{path} is a supported file")
             yield path
+
+
+def write_json(path: Path, content: Dict[str, Any]) -> None:
+    with path.open("w") as f:
+        json.dump(content, f, indent=2)
+
+
+def write_reports(path: Path, reports: List[Report]) -> None:
+    content = unstructure(reports)
+
+    logger.info(f"Writing report to {path}")
+    write_json(path=path, content=content)

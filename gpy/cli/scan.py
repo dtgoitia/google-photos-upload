@@ -1,13 +1,13 @@
 import logging
 from pathlib import Path
-from typing import Any, List  # TODO: find namespace type
+from typing import Any, List, Optional  # TODO: find namespace type
 
 import click
 
 from gpy.exiftool import client as exiftool_client
 from gpy.filenames import DatetimeParser
 from gpy.filenames import parse_datetime as datetime_parser
-from gpy.filesystem import get_paths_recursive
+from gpy.filesystem import get_paths_recursive, write_reports
 from gpy.types import Report, print_report
 
 logger = logging.getLogger(__name__)
@@ -20,8 +20,9 @@ def scan_group() -> None:
 
 
 @scan_group.command(name="date")
+@click.option("--report", "report_output", type=click.Path())
 @click.argument("path", type=click.Path(exists=True))
-def scan_date_command(path: str) -> None:
+def scan_date_command(report_output: Optional[str], path: str) -> None:
     """Scan files and directories.
 
     Scan files and directories looking and report:
@@ -29,7 +30,11 @@ def scan_date_command(path: str) -> None:
      - Date tag: the supported file does/doesn't have date tag.
      - GPS tag: the supported file does/doesn't have GPS tag.
     """
-    scan_date(exiftool_client, datetime_parser, Path(path))
+    reports = scan_date(exiftool_client, datetime_parser, Path(path))
+
+    if report_output:
+        report_path = Path(report_output)
+        write_reports(path=report_path, reports=reports)
 
 
 def scan_date(exiftool: Any, parse_datetime: DatetimeParser, dir: Path) -> List[Report]:
