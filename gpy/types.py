@@ -8,16 +8,22 @@ import attr
 import cattr
 
 converter = cattr.Converter()
+structure = converter.structure
 unstructure = converter.unstructure
 
 logger = logging.getLogger(__name__)
 
 
-def unstructure_path(p: Path) -> str:
-    return str(p)
+def structure_path(path: str, _: Any) -> Path:
+    return Path(path)
+
+
+def unstructure_path(path: Path) -> str:
+    return str(path)
 
 
 converter.register_unstructure_hook(Path, unstructure_path)
+converter.register_structure_hook(Path, structure_path)
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -39,10 +45,15 @@ def _format_datetime(d: datetime) -> str:
     return result
 
 
+def structure_datetime(d: str, _: Any) -> datetime:
+    return datetime.fromisoformat(d)
+
+
 def unstructure_datetime(d: datetime) -> str:
-    return _format_datetime(d)
+    return d.isoformat()
 
 
+converter.register_structure_hook(datetime, structure_datetime)
 converter.register_unstructure_hook(datetime, unstructure_datetime)
 
 

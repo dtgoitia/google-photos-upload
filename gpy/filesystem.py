@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, Iterator, List
 
-from gpy.types import Report, unstructure
+from gpy.types import Report, structure, unstructure
 
 logger = logging.getLogger(__name__)
 
@@ -41,9 +41,20 @@ def get_paths_recursive(*, root_path: Path) -> Iterator[Path]:
             yield path
 
 
+def read_json(path: Path) -> Dict[str, Any]:
+    with path.open("r") as f:
+        return json.load(f)
+
+
 def write_json(path: Path, content: Dict[str, Any]) -> None:
     with path.open("w") as f:
         json.dump(content, f, indent=2)
+
+
+def read_reports(path: Path) -> List[Report]:
+    data = read_json(path)
+    reports = structure(data, List[Report])
+    return reports
 
 
 def write_reports(path: Path, reports: List[Report]) -> None:
