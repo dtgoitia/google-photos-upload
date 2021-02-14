@@ -1,8 +1,51 @@
+from pathlib import Path
 from unittest.mock import create_autospec
 
 from gspread.models import Spreadsheet, Worksheet
 
-from gpy.google_sheet import GSheetRow, fetch_worksheet
+from gpy.google_sheet import FileReport, GSheetRow, fetch_worksheet
+
+
+def test_gsheetrow_to_gsheet():
+    gsheet_row = GSheetRow(
+        id="foo/bar/baz.png",
+        last_filename="baz.png",
+        last_dir="foo/bar",
+        dates_match=True,
+        has_ghotos_timestamp=False,
+        uploaded=False,
+        album=None,
+    )
+
+    assert gsheet_row.to_gsheet() == [
+        "foo/bar/baz.png",
+        "baz.png",
+        "foo/bar",
+        True,
+        False,
+        False,
+        "",
+        "",
+    ]
+
+
+def test_filereport_to_gsheetrow():
+    file_report = FileReport(
+        path=Path("foo/bar/baz.png"),
+        dates_match=True,
+        has_ghotos_timestamp=False,
+        uploaded=False,
+    )
+
+    assert file_report.to_gsheet_row() == GSheetRow(
+        id="foo/bar/baz.png",
+        last_filename="baz.png",
+        last_dir="foo/bar",
+        dates_match=True,
+        has_ghotos_timestamp=False,
+        uploaded=False,
+        album=None,
+    )
 
 
 def test_fetch_worksheet():

@@ -1,4 +1,6 @@
-from typing import Dict, Optional
+import copy
+from pathlib import Path
+from typing import Dict, List, Optional, Union
 
 import attr
 from gspread.models import Spreadsheet
@@ -19,6 +21,18 @@ class GSheetRow:
     has_ghotos_timestamp: bool
     uploaded: bool
     album: Optional[Album] = None
+
+    def to_gsheet(self) -> List[Union[str, bool]]:
+        return [
+            self.id,
+            self.last_filename,
+            self.last_dir,
+            self.dates_match,
+            self.has_ghotos_timestamp,
+            self.uploaded,
+            "",  # TODO: support album ID
+            "",  # TODO: support album name
+        ]
 
 
 GSheet = Dict[str, GSheetRow]
@@ -59,3 +73,51 @@ def fetch_worksheet(sh: Spreadsheet) -> GSheet:
         gsheet[gsheet_row.id] = gsheet_row
 
     return gsheet
+
+
+@attr.s(auto_attribs=True, frozen=True)
+class FileReport:
+    path: Path
+    dates_match: bool
+    has_ghotos_timestamp: bool
+    uploaded: bool
+
+    @property
+    def id(self) -> str:
+        return str(self.path)
+
+    def to_gsheet_row(self) -> GSheetRow:
+        return GSheetRow(
+            id=self.id,
+            last_filename=self.path.name,
+            last_dir=str(self.path.parent),
+            dates_match=self.dates_match,
+            has_ghotos_timestamp=self.has_ghotos_timestamp,
+            uploaded=self.uploaded,
+            album=None,  # TODO: think how to figure albums out
+        )
+
+
+Report = List[FileReport]
+
+
+def merge(gsheet: GSheet, report: Report) -> GSheet:
+    merged = copy.copy(gsheet)
+
+    for file in report:
+        # TODO: consider if cherry-picking row attributes is worth, instead of
+        # just overwriting all the attributes
+        merged[file.id] = file.to_gsheet_row()
+
+    return merged
+
+
+def upload_worksheet(sh: Spreadsheet, gsheet: GSheet) -> None:
+    last_row = len(gsheet) + 1
+    range = f"A2:H{last_row}"
+
+    sorted_rows = sorted([v for v in gsheet.values()], key=lambda v: v.id)
+
+    values = [row.to_gsheet() for row in sorted_rows]
+
+    sh.sheet1.update(range, values)
