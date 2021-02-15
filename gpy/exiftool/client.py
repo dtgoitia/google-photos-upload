@@ -95,13 +95,13 @@ def quote(text: str) -> str:
     return indent(text, mark, lambda line: True)
 
 
-# Date/Time Original          : 2012:02:02 18:44:43
+# Date/Time Original          : 2012:02:02 18:44:43.001
 DATETIME_REGEX = re.compile(
-    r"Date\/Time Original\s*: (\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})"
+    r"Date\/Time Original\s*: (\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})(\.\d*)?"
 )
-# Create Date                 : 2012:02:02 18:44:43
+# Create Date                 : 2012:02:02 18:44:43.001
 CREATEDATE_REGEX = re.compile(
-    r"Create Date\s*: (\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})"
+    r"Create Date\s*: (\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})(\.\d*)?"
 )
 
 
@@ -127,6 +127,10 @@ def parse_datetime(output: str) -> datetime.datetime:
             f"No supported timestamps found in the following output:\n{quote(output)}"
         )
 
+    microsecond = 0
+    if matches.group(7):
+        microsecond = int(1_000_000 * float(matches.group(7)))
+
     timestamp = datetime.datetime(
         year=int(matches.group(1)),
         month=int(matches.group(2)),
@@ -134,6 +138,7 @@ def parse_datetime(output: str) -> datetime.datetime:
         hour=int(matches.group(4)),
         minute=int(matches.group(5)),
         second=int(matches.group(6)),
+        microsecond=microsecond,
     )
 
     return timestamp

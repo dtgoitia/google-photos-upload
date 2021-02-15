@@ -24,11 +24,6 @@ class MockSubprocess:
 @pytest.mark.parametrize(
     ("stdout", "expected_result"),
     (
-        # pytest.param(
-        #     ": 2019:01:01 08:50:26 \n",
-        #     datetime(2019, 1, 1, 8, 50, 25),
-        #     id="not_sure_when_this_happens",
-        # ),
         pytest.param(
             (
                 "some random text above the dates\n"
@@ -37,7 +32,17 @@ class MockSubprocess:
                 "Modify Date                     : 2019:02:02 18:44:45\n"
             ),
             datetime(2019, 2, 2, 18, 44, 43),
-            id="full_blown",
+            id="AllDates",
+        ),
+        pytest.param(
+            "Date/Time Original              : 2019:02:02 18:44:43",
+            datetime(2019, 2, 2, 18, 44, 43),
+            id="Date/Time Original | without second fraction",
+        ),
+        pytest.param(
+            "Date/Time Original              : 2019:02:02 18:44:43.001",
+            datetime(2019, 2, 2, 18, 44, 43, 1000),
+            id="Date/Time Original | with second fraction",
         ),
     ),
 )
