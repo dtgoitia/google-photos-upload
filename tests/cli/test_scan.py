@@ -93,6 +93,7 @@ def test_scan_single_file_date(
 
     exiftool_client_mock = MagicMock()
     exiftool_client_mock.read_datetime.return_value = metadata_datetime
+    exiftool_client_mock.read_google_timestamp.return_value = None
 
     actual_result = _scan_date(
         exiftool=exiftool_client_mock,

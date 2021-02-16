@@ -43,10 +43,16 @@ def _scan_date(exiftool: Any, parse_datetime: DatetimeParser, path: Path) -> Rep
 
     filename_date = parse_datetime(path.name)
     metadata_date = exiftool.read_datetime(path)
+    google_date = exiftool.read_google_timestamp(path)
     logger.debug("scan successfully completed")
 
     logger.debug("reporting scanned dates...")
-    report = Report(path, filename_date, metadata_date)
+    report = Report(
+        path=path,
+        filename_date=filename_date,
+        metadata_date=metadata_date,
+        google_date=google_date,
+    )
     print_report(report)
 
     return report

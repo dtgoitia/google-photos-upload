@@ -33,6 +33,7 @@ class Report:  # TODO: rename Report --> MediaMetadata
     path: Path
     filename_date: Optional[datetime] = None
     metadata_date: Optional[datetime] = None
+    google_date: Optional[datetime] = None
     gps: Optional[GpsCoordinates] = None
 
     @property

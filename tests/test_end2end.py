@@ -126,6 +126,7 @@ def test_gpy_meta_date_fromfile_single_image(
             path=tmp_real_img,
             metadata_date=datetime.datetime(2019, 2, 2, 18, 44, 43),
             filename_date=datetime.datetime(2019, 2, 2, 18, 44, 42),
+            google_date=None,
         ),
     ]
 
@@ -145,6 +146,7 @@ def test_gpy_meta_date_fromfile_single_image(
             path=tmp_real_img,
             metadata_date=datetime.datetime(2019, 2, 2, 18, 44, 42),
             filename_date=datetime.datetime(2019, 2, 2, 18, 44, 42),
+            google_date=datetime.datetime(2019, 2, 2, 18, 44, 42),
         ),
     ]
 

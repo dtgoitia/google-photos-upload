@@ -44,6 +44,11 @@ class MockSubprocess:
             datetime(2019, 2, 2, 18, 44, 43, 1000),
             id="Date/Time Original | with second fraction",
         ),
+        pytest.param(
+            "Create Date                     : 2019:02:02 18:44:44.001\n",
+            datetime(2019, 2, 2, 18, 44, 44, 1000),
+            id="XMP:CreateDate",
+        ),
     ),
 )
 def test_parse_datetime(stdout, expected_result):
