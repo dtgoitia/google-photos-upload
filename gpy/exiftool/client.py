@@ -186,7 +186,9 @@ def write_ts(path: Path, *, ts: datetime.datetime, backup: bool = False) -> None
 
     formatted_datetime = format_timestamp(ts)
 
+    # exiftool -a -XMP:CreateDate="2020:01:01 13:01:01.001" foo/bar.jpg
     cmd_1 = f'exiftool -a -XMP:CreateDate="{formatted_datetime}" {path}'
+    # exiftool -a "-AllDates<XMP:CreateDate" foo/bar.jpg
     cmd_2 = f'exiftool -a "-AllDates<XMP:CreateDate" {path}'
 
     if backup is False:
