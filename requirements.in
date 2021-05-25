@@ -5,6 +5,7 @@ click
 colored
 flake8
 google-auth-oauthlib
+gspread
 ipdb
 isort
 mypy
