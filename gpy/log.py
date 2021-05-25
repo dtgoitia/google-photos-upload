@@ -1,5 +1,7 @@
+import datetime
 import logging
 from logging import LogRecord
+from pathlib import Path
 
 import colored
 from colored import stylize
@@ -30,3 +32,16 @@ class ConditionalFormatter(logging.Formatter):
 #        - Filename and metadata match, +GPS -> OK
 #        - If no GPS metadata -> Add '_nogps' at the end of the filename
 #        - Filename and metadata don't match ->
+
+
+def get_logs_output_path() -> Path:
+    today = datetime.date.today().isoformat()
+    logs_dir = Path("logs")
+    logs_dir.mkdir(exist_ok=True)
+    logs_path = logs_dir / f"{today}.log"
+    return logs_path
+
+
+def get_log_format() -> str:
+    # https://docs.python.org/3/library/logging.html#logrecord-attributes
+    return "%(asctime)s:%(levelname)s:%(filename)s:%(lineno)d:%(message)s"
