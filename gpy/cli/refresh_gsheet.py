@@ -80,19 +80,19 @@ def get_updated_state(
     return file_report
 
 
-def add_timezone(report: FileDateReport) -> FileDateReport:
+def add_timezone(report: FileDateReport, tz=DEFAULT_TZ) -> FileDateReport:
     if report.filename_date:
-        filename_date = DEFAULT_TZ.localize(report.filename_date)
+        filename_date = tz.localize(report.filename_date)
     else:
         filename_date = None
 
     if report.metadata_date:
-        metadata_date = DEFAULT_TZ.localize(report.metadata_date)
+        metadata_date = tz.localize(report.metadata_date)
     else:
         metadata_date = None
 
     if report.google_date:
-        google_date = DEFAULT_TZ.localize(report.google_date)
+        google_date = tz.localize(report.google_date)
     else:
         google_date = None
 
@@ -119,16 +119,14 @@ class UploadedMediaInfoPath:
         _, date_range, timestamp_as_str = path.stem.split("__")
 
         start, end = map(datetime.datetime.fromisoformat, date_range.split("_"))
-        # start_as_str, end_as_str = date_range.split("_")
-        # start = datetime.datetime.fromisoformat(start_as_str)
-        # end = datetime.datetime.fromisoformat(end_as_str)
-
         created_on = datetime.datetime.fromisoformat(timestamp_as_str)
 
         return cls(start=start, end=end, path=path, created_on=created_on)
 
 
-def get_last_report_path(start: datetime.datetime, end: datetime.datetime) -> Path:
+def get_last_report_gphotos_path(
+    start: datetime.datetime, end: datetime.datetime
+) -> Path:
     def matches_dates(path: UploadedMediaInfoPath) -> bool:
         return path.start == start and path.end == end
 
@@ -138,6 +136,32 @@ def get_last_report_path(start: datetime.datetime, end: datetime.datetime) -> Pa
 
     most_recent_report: UploadedMediaInfoPath = next(paths_of_interest)
     for report in paths_of_interest:
+        if most_recent_report.created_on < report.created_on:
+            most_recent_report = report
+
+    return most_recent_report.path
+
+
+@attr.s(auto_attribs=True, frozen=True)
+class LocalMediaReportPath:
+    path: Path
+    created_on: datetime.datetime
+
+    @classmethod
+    def from_path(cls, path: Path) -> UploadedMediaInfoPath:
+        _, timestamp_as_str = path.stem.split("__")
+
+        created_on = datetime.datetime.fromisoformat(timestamp_as_str)
+
+        return cls(path=path, created_on=created_on)
+
+
+def get_last_local_report_path() -> Path:
+    json_paths = LOCAL_MEDIA_INFO_DIR.glob("*.json")
+    parsed_paths = map(LocalMediaReportPath.from_path, json_paths)
+
+    most_recent_report: LocalMediaReportPath = next(parsed_paths)
+    for report in parsed_paths:
         if most_recent_report.created_on < report.created_on:
             most_recent_report = report
 
@@ -155,8 +179,12 @@ def build_local_file_report() -> Path:
     logger.info(f"Scanning file datetimes in {MEDIA_DIR}")
     reports = scan_date(exiftool_client, datetime_parser, MEDIA_DIR)
     logger.info(f"Scan completed")
+    logger.info(f"Adding timezone data if required")
+
+    reports_with_tz = list(map(add_timezone, reports))
+
     report_path = build_local_file_report_path()
-    write_reports(path=report_path, reports=reports)
+    write_reports(path=report_path, reports=reports_with_tz)
     return report_path
 
 
@@ -167,19 +195,20 @@ def refresh_google_spreadsheet_to_latest_state() -> None:
     # check what's in GPhotos
     use_last_report = True
     if use_last_report:
-        uploaded_media_info_path = get_last_report_path(start, end)
+        uploaded_media_info_path = get_last_report_gphotos_path(start, end)
     else:
         uploaded_media_info_path = fetch_uploaded_media_info_between_dates(start, end)
     uploaded_media_items = read_uploaded_media_report(uploaded_media_info_path)
     uploaded_file_ids = get_uploaded_file_ids(uploaded_media_items)
 
     # check what's is localy - ready to upload or not
-    local_files_report_path = build_local_file_report()
+    if use_last_report:
+        local_files_report_path = get_last_local_report_path()
+    else:
+        local_files_report_path = build_local_file_report()
     current_local_files = read_reports(local_files_report_path)
-    # Add timezone to the timestamp collected from the local files
-    current_local_files = list(map(add_timezone, current_local_files))
 
-    # TODO: rebuild new GSheet state
+    # rebuild new GSheet state
     file_reports = get_updated_state(uploaded_file_ids, current_local_files)
 
     # # TODO: store new GSheet state localy with timestamp

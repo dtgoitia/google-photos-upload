@@ -2,13 +2,14 @@ import datetime
 from pathlib import Path
 
 import pytest
+import pytz
 
 from gpy.config import DEFAULT_TZ
 from gpy.types import (
     FileDateReport,
     MediaItem,
     MediaMetadata,
-    _compare_dates,
+    dates_are_equal,
     structure,
     unstructure,
 )
@@ -44,7 +45,7 @@ from gpy.types import (
     ],
 )
 def test_compare_dates(date_a, date_b, expected_result):
-    actual_result = _compare_dates(date_a, date_b)
+    actual_result = dates_are_equal(date_a, date_b)
 
     assert actual_result == expected_result
 
@@ -195,3 +196,13 @@ def test_media_item_unstrucure():
         "contributorInfo": None,
         "description": None,
     }
+
+
+def test_compare_dates():
+    naive_t = datetime.datetime(2012, 1, 1)
+    utc_t = datetime.datetime(2012, 1, 1, tzinfo=pytz.utc)
+    non_utc_t = datetime.datetime(2012, 1, 1, tzinfo=pytz.timezone("Europe/London"))
+
+    assert dates_are_equal(naive_t, utc_t) is True
+    assert dates_are_equal(naive_t, non_utc_t) is False
+    assert dates_are_equal(utc_t, non_utc_t) is False

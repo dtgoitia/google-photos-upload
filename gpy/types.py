@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 
 import attr
 import cattr
+import pytz
 
 converter = cattr.Converter()
 structure = converter.structure
@@ -75,7 +76,7 @@ class FileDateReport:
 
     @property
     def dates_match(self) -> bool:
-        return _compare_dates(self.filename_date, self.metadata_date)
+        return dates_are_equal(self.filename_date, self.metadata_date)
 
     @property
     def fmt_filename_date(self) -> str:
@@ -96,14 +97,20 @@ class FileDateReport:
         if self.has_google_date is False:
             return False
 
-        return self.filename_date is None
+        if self.filename_date is None:
+            return True
+
+        return False
 
 
-def _compare_dates(a: Optional[datetime], b: Optional[datetime]) -> bool:
+def dates_are_equal(a: Optional[datetime], b: Optional[datetime]) -> bool:
     if not (a and b):
         return False
 
-    return a == b
+    a_utc = a.astimezone(pytz.utc)
+    b_utc = b.astimezone(pytz.utc)
+
+    return a_utc == b_utc
 
 
 def print_report(report: FileDateReport) -> None:
