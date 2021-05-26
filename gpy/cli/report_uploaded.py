@@ -3,12 +3,11 @@ import logging
 from pathlib import Path
 
 import click
-import pytz
 
 from gpy.config import UPLOADED_MEDIA_INFO_DIR
 from gpy.filesystem import write_json
 from gpy.gphotos import GooglePhotosClient
-from gpy.types import JsonDict, structure, unstructure
+from gpy.types import unstructure
 
 logger = logging.getLogger(__name__)
 

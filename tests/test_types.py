@@ -5,6 +5,7 @@ import pytest
 import pytz
 
 from gpy.config import DEFAULT_TZ
+from gpy.google_sheet import FileReport
 from gpy.types import (
     FileDateReport,
     MediaItem,
@@ -48,6 +49,16 @@ def test_compare_dates(date_a, date_b, expected_result):
     actual_result = dates_are_equal(date_a, date_b)
 
     assert actual_result == expected_result
+
+
+def test_compare_dates_considers_timezones():
+    naive_t = datetime.datetime(2012, 1, 1)
+    utc_t = datetime.datetime(2012, 1, 1, tzinfo=pytz.utc)
+    non_utc_t = datetime.datetime(2012, 1, 1, tzinfo=pytz.timezone("Europe/London"))
+
+    assert dates_are_equal(naive_t, utc_t) is True
+    assert dates_are_equal(naive_t, non_utc_t) is False
+    assert dates_are_equal(utc_t, non_utc_t) is False
 
 
 def test_structure_report():
@@ -198,11 +209,27 @@ def test_media_item_unstrucure():
     }
 
 
-def test_compare_dates():
-    naive_t = datetime.datetime(2012, 1, 1)
-    utc_t = datetime.datetime(2012, 1, 1, tzinfo=pytz.utc)
-    non_utc_t = datetime.datetime(2012, 1, 1, tzinfo=pytz.timezone("Europe/London"))
+def test_unstructure_file_report():
+    file_report = FileReport(
+        file_id="bar.jpg__2005-09-14T09:07:08+00:00",
+        path=Path("foo/bar/baz.jpg"),
+        filename_date=None,
+        metadata_date=datetime.datetime(2005, 9, 14, 9, 7, 8, tzinfo=pytz.utc),
+        dates_match=False,
+        gphotos_compatible_metadata=False,
+        ready_to_upload=False,
+        uploaded=False,
+    )
 
-    assert dates_are_equal(naive_t, utc_t) is True
-    assert dates_are_equal(naive_t, non_utc_t) is False
-    assert dates_are_equal(utc_t, non_utc_t) is False
+    data = unstructure(file_report)
+
+    assert data == {
+        "file_id": "bar.jpg__2005-09-14T09:07:08+00:00",
+        "path": "foo/bar/baz.jpg",
+        "filename_date": None,
+        "metadata_date": "2005-09-14T09:07:08+00:00",
+        "dates_match": False,
+        "gphotos_compatible_metadata": False,
+        "ready_to_upload": False,
+        "uploaded": False,
+    }

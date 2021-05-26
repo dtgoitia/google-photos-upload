@@ -11,16 +11,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 
 from gpy.config import DEFAULT_TZ
 from gpy.filesystem import read_json, write_json
-from gpy.types import (
-    FileId,
-    JsonDict,
-    MediaItem,
-    MediaMetadata,
-    MimeType,
-    Url,
-    structure,
-    unstructure,
-)
+from gpy.types import JsonDict, MediaItem, MediaMetadata, structure, unstructure
 
 logger = logging.getLogger(__name__)
 
@@ -31,54 +22,6 @@ AUTHORIZED_TOKEN_FILENAME = "authorized_token"  # this caches token
 
 class UploadError(Exception):
     pass
-
-
-# @attr.s(auto_attribs=True, frozen=True)
-# class MediaMetadata:
-#     creation_time: datetime.datetime
-#     width: int
-#     height: int
-#     photo: Optional[JsonDict] = None
-
-#     def to_json(self) -> JsonDict:
-#         return {
-#             "creationTime": f"{self.creation_time.isoformat()}Z",
-#             "width": self.width,
-#             "height": self.height,
-#             "photo": self.photo,
-#         }
-
-
-# @attr.s(auto_attribs=True, frozen=True)
-# class MediaItem:
-#     # https://developers.google.com/photos/library/reference/rest/v1/mediaItems#MediaItem
-#     id: str
-#     product_url: Url
-#     base_url: Url
-#     mime_type: MimeType
-#     # https://developers.google.com/photos/library/reference/rest/v1/mediaItems#MediaMetadata
-#     media_metadata: MediaMetadata
-#     # https://developers.google.com/photos/library/reference/rest/v1/mediaItems#ContributorInfo
-#     filename: str
-#     contributor_info: Optional[JsonDict] = None
-#     description: Optional[str] = None
-
-#     def to_json(self) -> JsonDict:
-#         if self.contributor_info:
-#             contributor_info = self.contributor_info.to_json()
-#         else:
-#             contributor_info = None
-
-#         return {
-#             "id": self.id,
-#             "productUrl": self.product_url,
-#             "baseUrl": self.base_url,
-#             "mimeType": self.mime_type,
-#             "mediaMetadata": self.media_metadata.to_json(),
-#             "filename": self.filename,
-#             "contributorInfo": contributor_info,
-#             "description": self.description,
-#         }
 
 
 class GooglePhotosClient:

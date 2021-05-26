@@ -3,16 +3,15 @@ from __future__ import annotations
 import datetime
 import logging
 from pathlib import Path
-from typing import List, Optional, Set, Tuple
+from typing import List, Set
 
 import attr
 import gspread
-import pytz
 
-from gpy.cli import report_uploaded
 from gpy.cli.report_uploaded import fetch_uploaded_media_info_between_dates
 from gpy.cli.scan import scan_date
 from gpy.config import (
+    AGGREGATED_MEDIA_INFO_DIR,
     DEFAULT_TZ,
     LOCAL_MEDIA_INFO_DIR,
     MEDIA_DIR,
@@ -21,11 +20,17 @@ from gpy.config import (
 from gpy.exiftool import client as exiftool_client
 from gpy.filenames import build_file_id
 from gpy.filenames import parse_datetime as datetime_parser
-from gpy.filesystem import read_reports, write_reports
-from gpy.google_sheet import FileReport, fetch_worksheet, merge, upload_worksheet
+from gpy.filesystem import read_reports, write_json, write_reports
+from gpy.google_sheet import (
+    FileId,
+    FileReport,
+    fetch_worksheet,
+    merge,
+    upload_worksheet,
+)
 from gpy.gphotos import MediaItem, read_media_items
 from gpy.log import get_log_format, get_logs_output_path
-from gpy.types import FileDateReport, FileId
+from gpy.types import FileDateReport, unstructure
 
 logger = logging.getLogger(__name__)
 
@@ -178,8 +183,8 @@ def build_local_file_report() -> Path:
     # python -m gpy --debug scan date --report foo.json to_backup_in_gphotos
     logger.info(f"Scanning file datetimes in {MEDIA_DIR}")
     reports = scan_date(exiftool_client, datetime_parser, MEDIA_DIR)
-    logger.info(f"Scan completed")
-    logger.info(f"Adding timezone data if required")
+    logger.info("Scan completed")
+    logger.info("Adding timezone data if required")
 
     reports_with_tz = list(map(add_timezone, reports))
 
@@ -188,13 +193,28 @@ def build_local_file_report() -> Path:
     return report_path
 
 
+def build_file_report_path() -> Path:
+    now = datetime.datetime.now().isoformat()
+    return AGGREGATED_MEDIA_INFO_DIR / f"local_media_info__{now}.json"
+
+
+def save_file_aggregated_reports(reports: List[FileReport]) -> None:
+    path = build_file_report_path()
+    data = unstructure(reports)
+
+    logger.info(f"Storing file aggregated reports at {path}")
+    write_json(path=path, content=data)
+
+    return path
+
+
 def refresh_google_spreadsheet_to_latest_state() -> None:
-    start = datetime.datetime(1990, 1, 1)
-    end = datetime.datetime(2005, 1, 1)
+    start = datetime.datetime(2005, 6, 1)
+    end = datetime.datetime(2007, 1, 1)
 
     # check what's in GPhotos
     use_last_report = True
-    if use_last_report:
+    if True:  # you really don't care about what's uploaded... ¬¬
         uploaded_media_info_path = get_last_report_gphotos_path(start, end)
     else:
         uploaded_media_info_path = fetch_uploaded_media_info_between_dates(start, end)
@@ -209,10 +229,11 @@ def refresh_google_spreadsheet_to_latest_state() -> None:
     current_local_files = read_reports(local_files_report_path)
 
     # rebuild new GSheet state
-    file_reports = get_updated_state(uploaded_file_ids, current_local_files)
+    file_aggregated_reports = get_updated_state(uploaded_file_ids, current_local_files)
 
     # # TODO: store new GSheet state localy with timestamp
-    # report_path = store_file_reports(file_reports)
+    aggregated_report_path = save_file_aggregated_reports(file_aggregated_reports)
+    print(aggregated_report_path)
 
     # Pushing new state to GSheet
     logger.info("Authenticating with Google Spreadsheet API...")
@@ -225,7 +246,7 @@ def refresh_google_spreadsheet_to_latest_state() -> None:
     worksheet = fetch_worksheet(sh)
 
     logger.info("Merging report data with the spreadsheet...")
-    updated_gsheet = merge(worksheet, file_reports)
+    updated_gsheet = merge(worksheet, file_aggregated_reports)
 
     logger.info("Uploading updated data to the spreadsheet...")
     upload_worksheet(sh, updated_gsheet)
@@ -234,7 +255,8 @@ def refresh_google_spreadsheet_to_latest_state() -> None:
     # TODO: in the `reconcile` command, read state from GSheet - which has been manually updated
     # TODO: check local state, compare with GSheet
     # TODO: apply required changes to change local state to GSheet
-    # TODO: update GSheet with achieved changes (don't update unachieved changes in GSheet, but log missing unachieved changes and why it was not possible to achieve them)
+    # TODO: update GSheet with achieved changes (don't update unachieved changes in
+    # GSheet, but log missing unachieved changes and why it was not possible to achieve them)
 
     # Keep log of what has been uploaded when in a log file
 

@@ -228,3 +228,22 @@ def unstructure_media_item(media_item: MediaItem) -> JsonDict:
 
 converter.register_structure_hook(MediaItem, structure_media_item)
 converter.register_unstructure_hook(MediaItem, unstructure_media_item)
+
+
+@attr.s(auto_attribs=True, frozen=True)
+class Action:
+    """Declaration of an action that should be applied.
+
+    Action examples:
+        - add timestamp to file
+        - upload file
+    """
+
+    pass
+
+
+@attr.s(auto_attribs=True, frozen=True)
+class AppliedAction:
+    """Data obtained as a result of applying an Action."""
+
+    pass

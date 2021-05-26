@@ -1,5 +1,5 @@
 reconcile:
-	python -m gpy reconcile
+	python -m gpy.cli.reconcile
 
 refresh:
 	python -m gpy.cli.refresh_gsheet
@@ -31,10 +31,11 @@ coverage:
 	python -m webbrowser -t file://$(realpath htmlcov/index.html)
 
 copy_files:
-	rm -rf "to_backup_in_gphotos/2001-2005/2003-08-21 - Espejo"
-	mkdir -p "to_backup_in_gphotos/2001-2005/2003-08-21 - Espejo"
+	rm -rf "to_backup_in_gphotos/2001-2005"
+	mkdir -p "to_backup_in_gphotos/2001-2005"
+	# last not uploaded picture: 2005-09-14 - Instituto 2 (Miércoles)
 	scp -rp \
-	  dtg@dtg:"/home/dtg/imagenes/to_backup_in_gphotos/2001-2005/2003-08-21\ -\ Espejo" \
+	  dtg@dtg:"/home/dtg/imagenes/to_backup_in_gphotos/2001-2005/2005-09-14\ -\ Instituto\ 2\ \(Miércoles\)" \
 	  "to_backup_in_gphotos/2001-2005"
 
 

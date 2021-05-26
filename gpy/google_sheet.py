@@ -8,11 +8,12 @@ from gspread.models import Spreadsheet
 
 from gpy.types import FileId
 
+EMPTY_CELL = ""
 
-@attr.s(auto_attribs=True, frozen=True)
-class Album:
-    id: str
-    name: str
+# @attr.s(auto_attribs=True, frozen=True)
+# class Album:
+#     id: str
+#     name: str
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -64,7 +65,35 @@ class GSheetRow:
 
 Worksheet = Dict[FileId, GSheetRow]
 
-EMPTY_CELL = ""
+
+@attr.s(auto_attribs=True, frozen=True)
+class FileReport:
+    """Current status of a file, both in terms of metadata and being uploaded."""
+
+    file_id: FileId
+    path: Path
+    filename_date: Optional[datetime.datetime]
+    metadata_date: datetime.datetime
+    dates_match: bool
+    gphotos_compatible_metadata: bool
+    ready_to_upload: bool
+    uploaded: bool
+
+    def to_gsheet_row(self) -> GSheetRow:
+        return GSheetRow(
+            file_id=self.file_id,
+            path=self.path,
+            filename_date=self.filename_date,
+            metadata_date=self.metadata_date,
+            dates_match=self.dates_match,
+            gphotos_compatible_metadata=self.gphotos_compatible_metadata,
+            ready_to_upload=self.ready_to_upload,
+            uploaded=self.uploaded,
+            upload_in_next_reconcile=None,  # TODO: add support for this
+        )
+
+
+Report = List[FileReport]
 
 
 def cast_datetime(s: str) -> Optional[datetime.datetime]:
@@ -114,36 +143,6 @@ def fetch_worksheet(sh: Spreadsheet) -> Worksheet:
         gsheet[gsheet_row.file_id] = gsheet_row
 
     return gsheet
-
-
-@attr.s(auto_attribs=True, frozen=True)
-class FileReport:
-    """Current status of a file, both in terms of metadata and being uploaded."""
-
-    file_id: FileId
-    path: Path
-    filename_date: datetime.datetime
-    metadata_date: datetime.datetime
-    dates_match: bool
-    gphotos_compatible_metadata: bool
-    ready_to_upload: bool
-    uploaded: bool
-
-    def to_gsheet_row(self) -> GSheetRow:
-        return GSheetRow(
-            file_id=self.file_id,
-            path=self.path,
-            filename_date=self.filename_date,
-            metadata_date=self.metadata_date,
-            dates_match=self.dates_match,
-            gphotos_compatible_metadata=self.gphotos_compatible_metadata,
-            ready_to_upload=self.ready_to_upload,
-            uploaded=self.uploaded,
-            upload_in_next_reconcile=None,  # TODO: add support for this
-        )
-
-
-Report = List[FileReport]
 
 
 def merge(gsheet: Worksheet, report: Report) -> Worksheet:
