@@ -22,7 +22,7 @@ from gpy.cli.meta import edit_metadata_datetime
 from gpy.cli.scan import _scan_date, scan_date
 from gpy.exiftool import client as exiftool_client
 from gpy.filenames import parse_datetime as datetime_parser
-from gpy.types import Report
+from gpy.types import FileDateReport
 
 
 def test_exiftool_is_installed():
@@ -41,7 +41,7 @@ def test_gpy_scan_date_single(tmp_real_img: Path, caplog: LogCapture) -> None:
 
     report = _scan_date(exiftool_client, datetime_parser, tmp_real_img)
 
-    assert report == Report(
+    assert report == FileDateReport(
         path=tmp_real_img,
         metadata_date=datetime.datetime(2019, 2, 2, 18, 44, 43),
         filename_date=datetime.datetime(2019, 2, 2, 18, 44, 42),
@@ -67,27 +67,27 @@ def test_gpy_scan_date_multiple(tmp_real_files: List[Path], caplog: LogCapture) 
     reports = scan_date(exiftool_client, datetime_parser, dir_path)
 
     assert reports == [
-        Report(
+        FileDateReport(
             path=img_1,
             metadata_date=datetime.datetime(2019, 2, 2, 18, 44, 43),
             filename_date=datetime.datetime(2019, 2, 2, 18, 44, 42),
         ),
-        Report(
+        FileDateReport(
             path=img_2,
             metadata_date=datetime.datetime(2019, 2, 2, 18, 44, 58),
             filename_date=datetime.datetime(2019, 2, 2, 18, 44, 49),
         ),
-        Report(
+        FileDateReport(
             path=img_3,
             metadata_date=datetime.datetime(2019, 2, 2, 18, 45, 21),
             filename_date=datetime.datetime(2019, 2, 2, 18, 45, 20),
         ),
-        Report(
+        FileDateReport(
             path=vid_1,
             metadata_date=datetime.datetime(2019, 2, 2, 18, 44, 25),
             filename_date=datetime.datetime(2019, 2, 2, 18, 44, 25),
         ),
-        Report(
+        FileDateReport(
             path=vid_2,
             metadata_date=datetime.datetime(2019, 2, 2, 18, 45, 13),
             filename_date=datetime.datetime(2019, 2, 2, 18, 45, 13),
@@ -122,7 +122,7 @@ def test_gpy_meta_date_fromfile_single_image(
     # Scan file dates
     reports_1 = scan_date(exiftool_client, datetime_parser, tmp_real_img)
     assert reports_1 == [
-        Report(
+        FileDateReport(
             path=tmp_real_img,
             metadata_date=datetime.datetime(2019, 2, 2, 18, 44, 43),
             filename_date=datetime.datetime(2019, 2, 2, 18, 44, 42),
@@ -142,7 +142,7 @@ def test_gpy_meta_date_fromfile_single_image(
     # Scan file dates
     reports_3 = scan_date(exiftool_client, datetime_parser, tmp_real_img)
     assert reports_3 == [
-        Report(
+        FileDateReport(
             path=tmp_real_img,
             metadata_date=datetime.datetime(2019, 2, 2, 18, 44, 42),
             filename_date=datetime.datetime(2019, 2, 2, 18, 44, 42),

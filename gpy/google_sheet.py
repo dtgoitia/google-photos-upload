@@ -1,9 +1,12 @@
 import copy
+import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import attr
 from gspread.models import Spreadsheet
+
+from gpy.types import FileId
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -14,110 +17,150 @@ class Album:
 
 @attr.s(auto_attribs=True, frozen=True)
 class GSheetRow:
-    id: str
-    last_filename: str
-    last_dir: str
+    file_id: FileId
+    path: Path
+    filename_date: Optional[datetime.datetime]
+    metadata_date: datetime.datetime
     dates_match: bool
-    has_ghotos_timestamp: bool
-    uploaded: bool
-    album: Optional[Album] = None
+    gphotos_compatible_metadata: bool
+    ready_to_upload: bool
+    uploaded: Optional[bool] = None
+    upload_in_next_reconcile: Optional[bool] = None
 
     def to_gsheet(self) -> List[Union[str, bool]]:
+        if self.filename_date:
+            filename_date = self.filename_date.isoformat()
+        else:
+            filename_date = EMPTY_CELL
+
+        if self.metadata_date:
+            metadata_date = self.metadata_date.isoformat()
+        else:
+            metadata_date = EMPTY_CELL
+
+        if self.uploaded is None:
+            uploaded = EMPTY_CELL
+        else:
+            uploaded = self.uploaded
+
+        if self.upload_in_next_reconcile is None:
+            upload_in_next_reconcile = EMPTY_CELL
+        else:
+            upload_in_next_reconcile = self.upload_in_next_reconcile
+
         return [
-            self.id,
-            self.last_filename,
-            self.last_dir,
+            self.file_id,
+            str(self.path),
+            self.path.name,
+            filename_date,
+            metadata_date,
             self.dates_match,
-            self.has_ghotos_timestamp,
-            self.uploaded,
-            "",  # TODO: support album ID
-            "",  # TODO: support album name
+            self.gphotos_compatible_metadata,
+            self.ready_to_upload,
+            uploaded,
+            upload_in_next_reconcile,
         ]
 
 
-GSheet = Dict[str, GSheetRow]
+Worksheet = Dict[FileId, GSheetRow]
+
+EMPTY_CELL = ""
 
 
-def cast_bool(s: str) -> bool:
+def cast_datetime(s: str) -> Optional[datetime.datetime]:
+    if s == EMPTY_CELL:
+        return None
+
+    return datetime.datetime.fromisoformat(s)
+
+
+def cast_bool(s: str) -> Optional[bool]:
     if s == "TRUE":
         return True
 
     if s == "FALSE":
         return False
 
+    if s == EMPTY_CELL:
+        return None
+
     raise ValueError(f"String {s!r} cannot be converted to a boolean")
 
 
-def fetch_worksheet(sh: Spreadsheet) -> GSheet:
-    raw_sh = sh.sheet1.get_all_records()
+def fetch_worksheet(sh: Spreadsheet) -> Worksheet:
+    raw_sheet = sh.get_worksheet(1).get_all_records()
 
-    gsheet: GSheet = {}
+    gsheet: Worksheet = {}
 
-    for row in raw_sh:
-        album = None
-        album_id = row["albumId"]
-        album_name = row["albumName"]
-        if album_id and album_name:
-            album = Album(id=album_id, name=album_name)
+    for row in raw_sheet:
+        # album = None
+        # album_id = row["albumId"]
+        # album_name = row["albumName"]
+        # if album_id and album_name:
+        #     album = Album(id=album_id, name=album_name)
 
         gsheet_row = GSheetRow(
-            id=row["ID"],
-            last_filename=row["Last filename"],
-            last_dir=row["Last dir"],
-            dates_match=cast_bool(row["Filename and metadata dates do match"]),
-            has_ghotos_timestamp=cast_bool(row["has GPhotos timestamp"]),
+            file_id=row["file_id"],
+            path=Path(row["path"]),
+            filename_date=cast_datetime(row["filename_date"]),
+            metadata_date=cast_datetime(row["metadata_date"]),
+            dates_match=cast_bool(row["dates_match"]),
+            gphotos_compatible_metadata=cast_bool(row["gphotos_compatible_metadata"]),
+            ready_to_upload=cast_bool(row["ready_to_upload"]),
             uploaded=cast_bool(row["uploaded"]),
-            album=album,
+            upload_in_next_reconcile=cast_bool(row["upload_in_next_reconcile"]),
         )
 
-        gsheet[gsheet_row.id] = gsheet_row
+        gsheet[gsheet_row.file_id] = gsheet_row
 
     return gsheet
 
 
 @attr.s(auto_attribs=True, frozen=True)
 class FileReport:
-    path: Path
-    dates_match: bool
-    has_ghotos_timestamp: bool
-    uploaded: bool
+    """Current status of a file, both in terms of metadata and being uploaded."""
 
-    @property
-    def id(self) -> str:
-        return str(self.path)
+    file_id: FileId
+    path: Path
+    filename_date: datetime.datetime
+    metadata_date: datetime.datetime
+    dates_match: bool
+    gphotos_compatible_metadata: bool
+    ready_to_upload: bool
+    uploaded: bool
 
     def to_gsheet_row(self) -> GSheetRow:
         return GSheetRow(
-            id=self.id,
-            last_filename=self.path.name,
-            last_dir=str(self.path.parent),
+            file_id=self.file_id,
+            path=self.path,
+            filename_date=self.filename_date,
+            metadata_date=self.metadata_date,
             dates_match=self.dates_match,
-            has_ghotos_timestamp=self.has_ghotos_timestamp,
+            gphotos_compatible_metadata=self.gphotos_compatible_metadata,
+            ready_to_upload=self.ready_to_upload,
             uploaded=self.uploaded,
-            album=None,  # TODO: think how to figure albums out
+            upload_in_next_reconcile=None,  # TODO: add support for this
         )
 
 
 Report = List[FileReport]
 
 
-def merge(gsheet: GSheet, report: Report) -> GSheet:
+def merge(gsheet: Worksheet, report: Report) -> Worksheet:
     merged = copy.copy(gsheet)
 
     for file in report:
-        # TODO: consider if cherry-picking row attributes is worth, instead of
-        # just overwriting all the attributes
-        merged[file.id] = file.to_gsheet_row()
+        merged[file.file_id] = file.to_gsheet_row()
 
     return merged
 
 
-def upload_worksheet(sh: Spreadsheet, gsheet: GSheet) -> None:
+def upload_worksheet(sh: Spreadsheet, gsheet: Worksheet) -> None:
     last_row = len(gsheet) + 1
-    range = f"A2:H{last_row}"
+    range = f"A2:J{last_row}"
 
-    sorted_rows = sorted([v for v in gsheet.values()], key=lambda v: v.id)
+    sorted_rows = sorted([v for v in gsheet.values()], key=lambda v: v.file_id)
 
     values = [row.to_gsheet() for row in sorted_rows]
 
-    sh.sheet1.update(range, values)
+    sh.get_worksheet(1).update(range, values)

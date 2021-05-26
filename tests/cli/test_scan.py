@@ -6,7 +6,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from gpy.cli.scan import _scan_date, scan_gps
-from gpy.types import Report
+from gpy.types import FileDateReport
 
 TZ = ZoneInfo("Europe/Madrid")
 
@@ -18,7 +18,7 @@ TZ = ZoneInfo("Europe/Madrid")
             Path("blah/foo.mp4"),
             None,
             None,
-            Report(
+            FileDateReport(
                 filename_date=None,
                 metadata_date=None,
                 path=Path("blah/foo.mp4"),
@@ -29,7 +29,7 @@ TZ = ZoneInfo("Europe/Madrid")
             Path("blah/foo.mp4"),
             None,
             datetime.datetime(2010, 1, 1, 16, 1, 1),
-            Report(
+            FileDateReport(
                 filename_date=None,
                 metadata_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
                 path=Path("blah/foo.mp4"),
@@ -40,7 +40,7 @@ TZ = ZoneInfo("Europe/Madrid")
             Path("blah/VID_20100101_160101_123.mp4"),
             datetime.datetime(2010, 1, 1, 16, 1, 1),
             None,
-            Report(
+            FileDateReport(
                 filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
                 metadata_date=None,
                 path=Path("blah/VID_20100101_160101_123.mp4"),
@@ -51,7 +51,7 @@ TZ = ZoneInfo("Europe/Madrid")
             Path("blah/VID_20100101_160101_123.mp4"),
             datetime.datetime(2010, 1, 1, 16, 1, 1),
             datetime.datetime(2012, 2, 2, 17, 2, 2),
-            Report(
+            FileDateReport(
                 filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
                 metadata_date=datetime.datetime(2012, 2, 2, 17, 2, 2),
                 path=Path("blah/VID_20100101_160101_123.mp4"),
@@ -62,7 +62,7 @@ TZ = ZoneInfo("Europe/Madrid")
             Path("blah/VID_20100101_160101_123.mp4"),
             datetime.datetime(2010, 1, 1, 16, 1, 1),
             datetime.datetime(2010, 1, 1, 16, 1, 1),
-            Report(
+            FileDateReport(
                 filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
                 metadata_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
                 path=Path("blah/VID_20100101_160101_123.mp4"),
@@ -73,7 +73,7 @@ TZ = ZoneInfo("Europe/Madrid")
             Path("blah/VID_20100101_160101_123.mp4"),
             datetime.datetime(2010, 1, 1, 16, 1, 1),
             datetime.datetime(2010, 1, 1, 16, 1, 1, tzinfo=TZ),
-            Report(
+            FileDateReport(
                 filename_date=datetime.datetime(2010, 1, 1, 16, 1, 1),
                 metadata_date=datetime.datetime(2010, 1, 1, 16, 1, 1, tzinfo=TZ),
                 path=Path("blah/VID_20100101_160101_123.mp4"),
@@ -86,7 +86,7 @@ def test_scan_single_file_date(
     path: Path,
     filename_datetime: datetime.datetime,
     metadata_datetime: datetime.datetime,
-    expected_result: Report,
+    expected_result: FileDateReport,
 ) -> None:
     parser_mock = MagicMock()
     parser_mock.return_value = filename_datetime

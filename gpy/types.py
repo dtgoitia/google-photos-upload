@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import attr
 import cattr
@@ -11,7 +11,15 @@ converter = cattr.Converter()
 structure = converter.structure
 unstructure = converter.unstructure
 
+JsonDict = Dict[str, Any]
+
+
 logger = logging.getLogger(__name__)
+
+Scope = str
+Url = str
+MimeType = str  # "image/jpeg"
+FileId = str  #
 
 
 def structure_path(path: str, _: Any) -> Path:
@@ -58,7 +66,7 @@ converter.register_unstructure_hook(datetime, unstructure_datetime)
 
 
 @attr.s(auto_attribs=True, frozen=True)
-class Report:  # TODO: rename Report --> MediaMetadata
+class FileDateReport:
     path: Path
     filename_date: Optional[datetime] = None
     metadata_date: Optional[datetime] = None
@@ -83,6 +91,13 @@ class Report:  # TODO: rename Report --> MediaMetadata
     def has_google_date(self) -> bool:
         return self.google_date is not None
 
+    @property
+    def is_ready_to_upload(self) -> bool:
+        if self.has_google_date is False:
+            return False
+
+        return self.filename_date is None
+
 
 def _compare_dates(a: Optional[datetime], b: Optional[datetime]) -> bool:
     if not (a and b):
@@ -91,7 +106,7 @@ def _compare_dates(a: Optional[datetime], b: Optional[datetime]) -> bool:
     return a == b
 
 
-def print_report(report: Report) -> None:
+def print_report(report: FileDateReport) -> None:
     """Print on screen a report dictionary."""
 
     if report.filename_date is None and report.metadata_date is None:
@@ -110,3 +125,99 @@ def print_report(report: Report) -> None:
         logger.debug("    OK: matching timestamp found in filename and in metadata")
     else:
         raise NotImplementedError("An unexpected case was reached!")
+
+
+@attr.s(auto_attribs=True, frozen=True)
+class MediaMetadata:
+    creation_time: datetime
+    width: int
+    height: int
+    photo: Optional[JsonDict] = None
+
+
+def structure_media_metadata(raw: JsonDict, _: Any) -> MediaMetadata:
+    return MediaMetadata(
+        creation_time=structure_datetime(raw["creationTime"], None),
+        width=int(raw["width"]),
+        height=int(raw["height"]),
+        photo=raw.get("photo"),
+    )
+
+
+def unstructure_media_metadata(media_metadata: MediaMetadata) -> JsonDict:
+    return {
+        "creationTime": unstructure_datetime(media_metadata.creation_time),
+        "width": media_metadata.width,
+        "height": media_metadata.height,
+        "photo": media_metadata.photo,
+    }
+
+
+converter.register_structure_hook(MediaMetadata, structure_media_metadata)
+converter.register_unstructure_hook(MediaMetadata, unstructure_media_metadata)
+
+
+@attr.s(auto_attribs=True, frozen=True)
+class MediaItem:
+    # https://developers.google.com/photos/library/reference/rest/v1/mediaItems#MediaItem
+    id: str
+    product_url: Url
+    base_url: Url
+    mime_type: MimeType
+    # https://developers.google.com/photos/library/reference/rest/v1/mediaItems#MediaMetadata
+    media_metadata: MediaMetadata
+    # https://developers.google.com/photos/library/reference/rest/v1/mediaItems#ContributorInfo
+    filename: str
+    contributor_info: Optional[JsonDict] = None
+    description: Optional[str] = None
+
+    # def to_json(self) -> JsonDict:
+    #     if self.contributor_info:
+    #         contributor_info = self.contributor_info.to_json()
+    #     else:
+    #         contributor_info = None
+
+    #     return {
+    #         "id": self.id,
+    #         "productUrl": self.product_url,
+    #         "baseUrl": self.base_url,
+    #         "mimeType": self.mime_type,
+    #         "mediaMetadata": self.media_metadata.to_json(),
+    #         "filename": self.filename,
+    #         "contributorInfo": contributor_info,
+    #         "description": self.description,
+    #     }
+
+
+def structure_media_item(raw: JsonDict, _: Any) -> MediaItem:
+    media_item = MediaItem(
+        id=raw["id"],
+        product_url=raw["productUrl"],
+        base_url=raw["baseUrl"],
+        mime_type=raw["mimeType"],
+        media_metadata=structure_media_metadata(raw["mediaMetadata"], None),
+        filename=raw["filename"],
+    )
+    return media_item
+
+
+def unstructure_media_item(media_item: MediaItem) -> JsonDict:
+    if media_item.contributor_info:
+        contributor_info = media_item.contributor_info
+    else:
+        contributor_info = None
+
+    return {
+        "id": media_item.id,
+        "productUrl": media_item.product_url,
+        "baseUrl": media_item.base_url,
+        "mimeType": media_item.mime_type,
+        "mediaMetadata": unstructure_media_metadata(media_item.media_metadata),
+        "filename": media_item.filename,
+        "contributorInfo": contributor_info,
+        "description": media_item.description,
+    }
+
+
+converter.register_structure_hook(MediaItem, structure_media_item)
+converter.register_unstructure_hook(MediaItem, unstructure_media_item)

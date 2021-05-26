@@ -1,9 +1,9 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Iterator, List
+from typing import Iterator, List
 
-from gpy.types import Report, structure, unstructure
+from gpy.types import FileDateReport, JsonDict, structure, unstructure
 
 logger = logging.getLogger(__name__)
 
@@ -41,23 +41,29 @@ def get_paths_recursive(*, root_path: Path) -> Iterator[Path]:
             yield path
 
 
-def read_json(path: Path) -> Dict[str, Any]:
+def create_parent_folder_if_required(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+
+def read_json(path: Path) -> JsonDict:
     with path.open("r") as f:
         return json.load(f)
 
 
-def write_json(path: Path, content: Dict[str, Any]) -> None:
+def write_json(path: Path, content: JsonDict) -> None:
+    create_parent_folder_if_required(path)
     with path.open("w") as f:
         json.dump(content, f, indent=2)
 
 
-def read_reports(path: Path) -> List[Report]:
+def read_reports(path: Path) -> List[FileDateReport]:
     data = read_json(path)
-    reports = structure(data, List[Report])
+    reports = structure(data, List[FileDateReport])
     return reports
 
 
-def write_reports(path: Path, reports: List[Report]) -> None:
+def write_reports(path: Path, reports: List[FileDateReport]) -> None:
+    create_parent_folder_if_required(path)
     content = unstructure(reports)
 
     logger.info(f"Writing report to {path}")

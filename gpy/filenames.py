@@ -1,9 +1,13 @@
 """This module contains the logic to parse dates from file names."""
 import datetime
 import re
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 DatetimeParser = Callable[[str], Optional[datetime.datetime]]
+
+
+def build_file_id(file_name: str, timestamp: Union[datetime.date, datetime.datetime]):
+    return f"{file_name}__{timestamp.isoformat()}"
 
 
 def parse_datetime(file_name: str) -> Optional[datetime.datetime]:

@@ -1,3 +1,15 @@
+# Google API
+client_id.json
+auth_token_file
+
+# Personal files
+reports/
+to_backup_in_gphotos/
+
+# Logs
+logs/
+*.log
+
 # Python
 __pycache__/
 *.egg-info/

@@ -8,7 +8,7 @@ from gpy.exiftool import client as exiftool_client
 from gpy.filenames import DatetimeParser
 from gpy.filenames import parse_datetime as datetime_parser
 from gpy.filesystem import get_paths_recursive, write_reports
-from gpy.types import Report, print_report
+from gpy.types import FileDateReport, print_report
 
 logger = logging.getLogger(__name__)
 
@@ -37,13 +37,17 @@ def scan_date_command(report_output: Optional[str], path: str) -> None:
         write_reports(path=report_path, reports=reports)
 
 
-def scan_date(exiftool: Any, parse_datetime: DatetimeParser, dir: Path) -> List[Report]:
+def scan_date(
+    exiftool: Any, parse_datetime: DatetimeParser, dir: Path
+) -> List[FileDateReport]:
     file_paths = get_paths_recursive(root_path=Path(dir))
 
     return [_scan_date(exiftool, parse_datetime, path) for path in file_paths]
 
 
-def _scan_date(exiftool: Any, parse_datetime: DatetimeParser, path: Path) -> Report:
+def _scan_date(
+    exiftool: Any, parse_datetime: DatetimeParser, path: Path
+) -> FileDateReport:
     logger.info(f"scanning {path}")
 
     filename_date = parse_datetime(path.name)
@@ -52,7 +56,7 @@ def _scan_date(exiftool: Any, parse_datetime: DatetimeParser, path: Path) -> Rep
     logger.debug("scan successfully completed")
 
     logger.debug("reporting scanned dates...")
-    report = Report(
+    report = FileDateReport(
         path=path,
         filename_date=filename_date,
         metadata_date=metadata_date,
@@ -63,7 +67,7 @@ def _scan_date(exiftool: Any, parse_datetime: DatetimeParser, path: Path) -> Rep
     return report
 
 
-def scan_gps(exiftool: Any, file_path: Path) -> Report:
+def scan_gps(exiftool: Any, file_path: Path) -> FileDateReport:
     logger.info(f"scanning {file_path}")
     gps = exiftool.read_gps(file_path)
-    return Report(path=file_path, gps=gps)
+    return FileDateReport(path=file_path, gps=gps)

@@ -147,11 +147,11 @@ def parse_datetime(output: str) -> datetime.datetime:
 
 def read_datetime(file_path: Path) -> datetime.datetime:
     """Return Date/Time from file, if any. Otherwise, raise."""
-    cmd = f'exiftool -AllDates "{file_path}"'
+    cmd = f"exiftool -AllDates {str(file_path)!r}"
     completed_process = subprocess.run(cmd, capture_output=True, shell=True)
 
     if completed_process.returncode != 0:
-        error_message = f"Reading date and time from {file_path!r} >>> "
+        error_message = f"Reading date and time from {str(file_path)!r} >>> "
         error_message += completed_process.stderr.decode("utf-8").rstrip("\n")
         raise ExifToolError(error_message)
 
@@ -164,11 +164,11 @@ def read_datetime(file_path: Path) -> datetime.datetime:
 def read_google_timestamp(path: Path) -> Optional[datetime.datetime]:
     """Return XMP:CreateDate from file, if any. Otherwise, raise."""
     # exiftool -XMP:CreateDate foo/bar.jpg
-    cmd = f"exiftool -XMP:CreateDate {path}"
+    cmd = f"exiftool -XMP:CreateDate {str(path)!r}"
     completed_process = subprocess.run(cmd, capture_output=True, shell=True)
 
     if completed_process.returncode != 0:
-        error_message = f"Reading Google timestamp from {path!r} >>> "
+        error_message = f"Reading Google timestamp from {str(path)!r} >>> "
         error_message += completed_process.stderr.decode("utf-8").rstrip("\n")
         raise ExifToolError(error_message)
 

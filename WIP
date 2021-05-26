@@ -1,0 +1,70 @@
+- [ ] Prepare logic to get files ready to be uploaded.
+- [ ] Prepare script to update GSheet data (`refresh`):
+  - [ ] Know which files are already uploaded
+    - [x] Tidy up script to get latest uploaded files GPhotos
+  - [ ] Update info about files and their datetimes
+- [ ] Prepare logic to reconcile desired state in GSheet
+
+High-level logic:
+  - fetch all GPhotos data into a blob (done)
+  - keep the data in a YAML in git, use GSheet as an easy to see view (create command to push YAML --> GSheet)
+    - GSheet is nice for filters, is read only
+  - Workflow:
+    1.  Scan locally -----> create YAML with status ----> push to GSheet
+    2.  Edit locally -----> update YAML ----------------> push to GSheet
+    3a. Push to GPhotos --> update YAML automatically --> push to GSheet
+    3b. Push to GPhotos --> update YAML manually -------> push to GSheet
+
+Add logic to include the fetched data (`uploaded_pictures_from_1990_to_2005-2021-02-21 20:29:25.992378.json`) in the GSheet report.
+
+Add tests to the GooglePhotosClient
+Improve the `_get` and `_post` methods in the GooglePhotosClient
+
+Performance: if execution speed becomes a bottle neck, use asyncio to parallelize subprocess calls.
+
+Reconcile job:
+  - Get Desired state from GSheet
+  - Desired state:
+    - media relative path and name
+    - media has metadata
+    - media has datetime in filename
+    - media has metadata 
+  
+  - Resolve rules:
+    - case a: ideal
+      - media has datetime in filename
+      - media has datetime in metadata
+      - metadata datetime is compatible with Google Photos one
+      - datetimes match
+      - ACTION: ready to upload to GPhotos
+    - case b:
+      - media has datetime in filename
+      - media has datetime in metadata
+      - datetimes do not match
+      - ACTION: ?
+    - case c:
+      - media has no datetime in filename
+      - media has datetime in metadata
+      - datetimes do not match
+      - ACTION: ?
+
+Copy files ready to be uploaded to a separate folder, so that you don't go through a destructive process.
+
+Workflow:
+  1. Ensure files are ready to be uploaded:
+    - filename and metadata datetimes must match
+    - metadata datetime format must be compatible with GPhotos
+    - Programmatically update GSheet to indicate which files have datetime in file or in metadata
+  2. Upload files to GPhotos
+    - Programmatically update GSheet to indicate which files are ready to be uploaded
+    - Manually update GSheet to indicate which files must be uploaded in the next reconcile job
+
+## albums
+
+Ignore the albums, until you have uploaded most of the pictures. You can take care of that later.
+
+Uploading to GPhotos is a 2 stage process:
+  1. First upload the file blob
+  2. Assign the file blob
+
+Once uploaded, I don't think it matters in which album you put it, so you can take care of that later on.

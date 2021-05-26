@@ -3,7 +3,15 @@ from pathlib import Path
 
 import pytest
 
-from gpy.types import Report, _compare_dates, structure, unstructure
+from gpy.config import DEFAULT_TZ
+from gpy.types import (
+    FileDateReport,
+    MediaItem,
+    MediaMetadata,
+    _compare_dates,
+    structure,
+    unstructure,
+)
 
 
 @pytest.mark.parametrize(
@@ -49,9 +57,9 @@ def test_structure_report():
         "gps": None,
     }
 
-    report = structure(data, Report)
+    report = structure(data, FileDateReport)
 
-    assert report == Report(
+    assert report == FileDateReport(
         path=Path("foo/bar.mp4"),
         filename_date=datetime.datetime(2019, 2, 2, 18, 44, 42, 1),
         metadata_date=datetime.datetime(2019, 2, 2, 18, 44, 43, 1),
@@ -59,7 +67,7 @@ def test_structure_report():
 
 
 def test_unstructure_report():
-    report = Report(
+    report = FileDateReport(
         path=Path("foo/bar.mp4"),
         filename_date=datetime.datetime(2019, 2, 2, 18, 44, 42, 1),
         metadata_date=datetime.datetime(2019, 2, 2, 18, 44, 43, 1),
@@ -93,7 +101,7 @@ def test_unstructure_datetime():
 
 
 def test_report_has_google_date():
-    report = Report(
+    report = FileDateReport(
         path=Path("foo/bar.mp4"),
         google_date=datetime.datetime(2019, 2, 2, 18, 44, 42, 1),
     )
@@ -102,6 +110,88 @@ def test_report_has_google_date():
 
 
 def test_report_has_no_google_date():
-    report = Report(path=Path("foo/bar.mp4"))
+    report = FileDateReport(path=Path("foo/bar.mp4"))
 
     assert report.has_google_date is False
+
+
+def test_media_metadata_unstrucure():
+    media_metadata = MediaMetadata(
+        creation_time=datetime.datetime(2004, 4, 29, 13, 25, 43, tzinfo=DEFAULT_TZ),
+        width=2048,
+        height=1536,
+        photo={
+            "cameraMake": "BENQ ",
+            "cameraModel": "BENQ DC2300",
+            "focalLength": 5.6,
+            "apertureFNumber": 3.5,
+            "isoEquivalent": 100,
+            "exposureTime": "0.011111111s",
+        },
+    )
+
+    data = unstructure(media_metadata)
+
+    assert data == {
+        "creationTime": "2004-04-29T13:25:43-00:15",
+        "width": 2048,
+        "height": 1536,
+        "photo": {
+            "cameraMake": "BENQ ",
+            "cameraModel": "BENQ DC2300",
+            "focalLength": 5.6,
+            "apertureFNumber": 3.5,
+            "isoEquivalent": 100,
+            "exposureTime": "0.011111111s",
+        },
+    }
+
+
+def test_media_item_unstrucure():
+    media_item = MediaItem(
+        id="id string",
+        product_url="product_url string",
+        base_url="base_url string",
+        mime_type="image/jpeg",
+        media_metadata=MediaMetadata(
+            creation_time=datetime.datetime(2004, 4, 29, 13, 25, 43, tzinfo=DEFAULT_TZ),
+            width=2048,
+            height=1536,
+            photo={
+                "cameraMake": "BENQ ",
+                "cameraModel": "BENQ DC2300",
+                "focalLength": 5.6,
+                "apertureFNumber": 3.5,
+                "isoEquivalent": 100,
+                "exposureTime": "0.011111111s",
+            },
+        ),
+        filename="Alex y Bocata.JPG",
+        contributor_info=None,
+        description=None,
+    )
+
+    data = unstructure(media_item)
+
+    assert data == {
+        "id": "id string",
+        "productUrl": "product_url string",
+        "baseUrl": "base_url string",
+        "mimeType": "image/jpeg",
+        "mediaMetadata": {
+            "creationTime": "2004-04-29T13:25:43-00:15",
+            "width": 2048,
+            "height": 1536,
+            "photo": {
+                "cameraMake": "BENQ ",
+                "cameraModel": "BENQ DC2300",
+                "focalLength": 5.6,
+                "apertureFNumber": 3.5,
+                "isoEquivalent": 100,
+                "exposureTime": "0.011111111s",
+            },
+        },
+        "filename": "Alex y Bocata.JPG",
+        "contributorInfo": None,
+        "description": None,
+    }
