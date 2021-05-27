@@ -16,6 +16,7 @@ from gpy.config import (
     LOCAL_MEDIA_INFO_DIR,
     MEDIA_DIR,
     UPLOADED_MEDIA_INFO_DIR,
+    USE_LAST_REPORT_ON_REFRESH,
 )
 from gpy.exiftool import client as exiftool_client
 from gpy.filenames import build_file_id
@@ -76,9 +77,11 @@ def get_updated_state(
             filename_date=date_report.filename_date,
             metadata_date=date_report.metadata_date,
             dates_match=date_report.dates_match,
-            gphotos_compatible_metadata=date_report.has_google_date,
+            gphotos_compatible_metadata=date_report.google_date,
             ready_to_upload=date_report.is_ready_to_upload,
             uploaded=is_uploaded,
+            add_google_timestamp=False,
+            upload_in_next_reconcile=False,
         )
         file_report.append(row)
 
@@ -184,12 +187,15 @@ def build_local_file_report() -> Path:
     logger.info(f"Scanning file datetimes in {MEDIA_DIR}")
     reports = scan_date(exiftool_client, datetime_parser, MEDIA_DIR)
     logger.info("Scan completed")
-    logger.info("Adding timezone data if required")
 
-    reports_with_tz = list(map(add_timezone, reports))
+    # Do not add tz
+    # GSheet should show what you have locally, with or without timezone
+    # When you reconcile, you can add the right timezone
+    # logger.info("Adding timezone data if required")
+    # reports_with_tz = list(map(add_timezone, reports))
 
     report_path = build_local_file_report_path()
-    write_reports(path=report_path, reports=reports_with_tz)
+    write_reports(path=report_path, reports=reports)
     return report_path
 
 
@@ -213,7 +219,6 @@ def refresh_google_spreadsheet_to_latest_state() -> None:
     end = datetime.datetime(2007, 1, 1)
 
     # check what's in GPhotos
-    use_last_report = True
     if True:  # you really don't care about what's uploaded... ¬¬
         uploaded_media_info_path = get_last_report_gphotos_path(start, end)
     else:
@@ -222,7 +227,7 @@ def refresh_google_spreadsheet_to_latest_state() -> None:
     uploaded_file_ids = get_uploaded_file_ids(uploaded_media_items)
 
     # check what's is localy - ready to upload or not
-    if use_last_report:
+    if USE_LAST_REPORT_ON_REFRESH:
         local_files_report_path = get_last_local_report_path()
     else:
         local_files_report_path = build_local_file_report()
@@ -231,9 +236,8 @@ def refresh_google_spreadsheet_to_latest_state() -> None:
     # rebuild new GSheet state
     file_aggregated_reports = get_updated_state(uploaded_file_ids, current_local_files)
 
-    # # TODO: store new GSheet state localy with timestamp
-    aggregated_report_path = save_file_aggregated_reports(file_aggregated_reports)
-    print(aggregated_report_path)
+    # store new GSheet state localy with timestamp
+    save_file_aggregated_reports(file_aggregated_reports)
 
     # Pushing new state to GSheet
     logger.info("Authenticating with Google Spreadsheet API...")

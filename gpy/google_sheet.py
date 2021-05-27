@@ -23,10 +23,11 @@ class GSheetRow:
     filename_date: Optional[datetime.datetime]
     metadata_date: datetime.datetime
     dates_match: bool
-    gphotos_compatible_metadata: bool
+    gphotos_compatible_metadata: Optional[datetime.datetime]
     ready_to_upload: bool
-    uploaded: Optional[bool] = None
-    upload_in_next_reconcile: Optional[bool] = None
+    uploaded: bool
+    add_google_timestamp: bool
+    upload_in_next_reconcile: bool
 
     def to_gsheet(self) -> List[Union[str, bool]]:
         if self.filename_date:
@@ -39,15 +40,20 @@ class GSheetRow:
         else:
             metadata_date = EMPTY_CELL
 
-        if self.uploaded is None:
-            uploaded = EMPTY_CELL
+        if self.gphotos_compatible_metadata:
+            gphotos_compatible_metadata = self.gphotos_compatible_metadata.isoformat()
         else:
-            uploaded = self.uploaded
+            gphotos_compatible_metadata = EMPTY_CELL
 
-        if self.upload_in_next_reconcile is None:
-            upload_in_next_reconcile = EMPTY_CELL
-        else:
-            upload_in_next_reconcile = self.upload_in_next_reconcile
+        # if self.uploaded is None:
+        #     uploaded = EMPTY_CELL
+        # else:
+        #     uploaded = self.uploaded
+
+        # if self.upload_in_next_reconcile is None:
+        #     upload_in_next_reconcile = EMPTY_CELL
+        # else:
+        #     upload_in_next_reconcile = self.upload_in_next_reconcile
 
         return [
             self.file_id,
@@ -56,10 +62,11 @@ class GSheetRow:
             filename_date,
             metadata_date,
             self.dates_match,
-            self.gphotos_compatible_metadata,
+            gphotos_compatible_metadata,
             self.ready_to_upload,
-            uploaded,
-            upload_in_next_reconcile,
+            self.uploaded,
+            self.add_google_timestamp,
+            self.upload_in_next_reconcile,
         ]
 
 
@@ -75,9 +82,11 @@ class FileReport:
     filename_date: Optional[datetime.datetime]
     metadata_date: datetime.datetime
     dates_match: bool
-    gphotos_compatible_metadata: bool
+    gphotos_compatible_metadata: Optional[datetime.datetime]
     ready_to_upload: bool
     uploaded: bool
+    add_google_timestamp: bool
+    upload_in_next_reconcile: bool
 
     def to_gsheet_row(self) -> GSheetRow:
         return GSheetRow(
@@ -89,11 +98,9 @@ class FileReport:
             gphotos_compatible_metadata=self.gphotos_compatible_metadata,
             ready_to_upload=self.ready_to_upload,
             uploaded=self.uploaded,
-            upload_in_next_reconcile=None,  # TODO: add support for this
+            add_google_timestamp=self.add_google_timestamp,
+            upload_in_next_reconcile=self.upload_in_next_reconcile,
         )
-
-
-Report = List[FileReport]
 
 
 def cast_datetime(s: str) -> Optional[datetime.datetime]:
@@ -134,9 +141,12 @@ def fetch_worksheet(sh: Spreadsheet) -> Worksheet:
             filename_date=cast_datetime(row["filename_date"]),
             metadata_date=cast_datetime(row["metadata_date"]),
             dates_match=cast_bool(row["dates_match"]),
-            gphotos_compatible_metadata=cast_bool(row["gphotos_compatible_metadata"]),
+            gphotos_compatible_metadata=cast_datetime(
+                row["gphotos_compatible_metadata"]
+            ),
             ready_to_upload=cast_bool(row["ready_to_upload"]),
             uploaded=cast_bool(row["uploaded"]),
+            add_google_timestamp=cast_bool(row["add_google_timestamp"]),
             upload_in_next_reconcile=cast_bool(row["upload_in_next_reconcile"]),
         )
 
@@ -145,21 +155,42 @@ def fetch_worksheet(sh: Spreadsheet) -> Worksheet:
     return gsheet
 
 
-def merge(gsheet: Worksheet, report: Report) -> Worksheet:
+def merge(gsheet: Worksheet, reports: List[FileReport]) -> Worksheet:
     merged = copy.copy(gsheet)
 
-    for file in report:
-        merged[file.file_id] = file.to_gsheet_row()
+    for file_report in reports:
+        merged[file_report.file_id] = file_report.to_gsheet_row()
 
     return merged
 
 
-def upload_worksheet(sh: Spreadsheet, gsheet: Worksheet) -> None:
-    last_row = len(gsheet) + 1
-    range = f"A2:J{last_row}"
+def column_index_to_name(index: int) -> str:
+    """Map the column index to its name in GSheet."""
+    return [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "H",
+        "I",
+        "J",
+        "K",
+        "L",
+        "M",
+    ][index - 1]
 
+
+def upload_worksheet(sh: Spreadsheet, gsheet: Worksheet) -> None:
     sorted_rows = sorted([v for v in gsheet.values()], key=lambda v: v.file_id)
 
     values = [row.to_gsheet() for row in sorted_rows]
+
+    any_row_values = values[0]
+    last_row_index = len(gsheet) + 1
+    last_column_name = column_index_to_name(index=len(any_row_values))
+    range = f"A2:{last_column_name}{last_row_index}"
 
     sh.get_worksheet(1).update(range, values)

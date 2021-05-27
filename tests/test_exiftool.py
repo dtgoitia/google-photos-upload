@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from gpy.exiftool.client import ExifToolError, parse_datetime, read_datetime
+from gpy.exiftool.client import ExifToolError, parse_exif_datetime, read_datetime
 
 
 @pytest.fixture
@@ -52,7 +52,7 @@ class MockSubprocess:
     ),
 )
 def test_parse_datetime(stdout, expected_result):
-    result = parse_datetime(stdout)
+    result = parse_exif_datetime(stdout)
     assert result == expected_result
 
 

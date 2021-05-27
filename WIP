@@ -1,3 +1,6 @@
+- [ ] Manually find next not-uploaded files, and go from there
+  don't try to fix photos you've already uploaded. Just take note of until what date was that done manually, and come back to fix that once you've finished
+
 - [ ] Prepare logic to get files ready to be uploaded.
 - [ ] Prepare script to update GSheet data (`refresh`):
   - [ ] Know which files are already uploaded

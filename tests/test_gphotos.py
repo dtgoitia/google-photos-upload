@@ -11,7 +11,7 @@ from gpy.gphotos import (
     GooglePhotosClient,
     UploadError,
     _save_access_token,
-    upload_photo,
+    upload_media,
 )
 
 
@@ -131,7 +131,7 @@ def test_upload_photo__happy_path(tmp_path: PosixPath) -> None:
     path = tmp_path / "photo_to_upload.jpg"
     path.write_bytes(b"photo content")
 
-    upload_photo(mock_session, path)
+    upload_media(mock_session, path)
 
 
 def test_raise_upload_photo__handled_server_error(tmp_path: PosixPath) -> None:
@@ -160,7 +160,7 @@ def test_raise_upload_photo__handled_server_error(tmp_path: PosixPath) -> None:
     path.write_bytes(b"photo content")
 
     with pytest.raises(UploadError) as e:
-        upload_photo(mock_session, path)
+        upload_media(mock_session, path)
 
     exc = e.value
 
@@ -183,7 +183,7 @@ def test_raise_upload_photo__other_handled_server_error(tmp_path: PosixPath) -> 
     path.write_bytes(b"photo content")
 
     with pytest.raises(UploadError) as e:
-        upload_photo(mock_session, path)
+        upload_media(mock_session, path)
 
     exc = e.value
 
@@ -205,7 +205,7 @@ def test_raise_upload_photo__unhandled_server_error(tmp_path: PosixPath) -> None
     path.write_bytes(b"photo content")
 
     with pytest.raises(UploadError) as e:
-        upload_photo(mock_session, path)
+        upload_media(mock_session, path)
 
     exc = e.value
 

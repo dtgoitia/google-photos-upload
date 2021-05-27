@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 from typing import Iterator, List
 
+from gpy.google_sheet import FileReport
 from gpy.types import FileDateReport, JsonDict, structure, unstructure
 
 logger = logging.getLogger(__name__)
@@ -68,3 +69,9 @@ def write_reports(path: Path, reports: List[FileDateReport]) -> None:
 
     logger.info(f"Writing report to {path}")
     write_json(path=path, content=content)
+
+
+def read_aggregated_reports(path: Path) -> List[FileReport]:
+    data = read_json(path)
+    reports = structure(data, List[FileReport])
+    return reports

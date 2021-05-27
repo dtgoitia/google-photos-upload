@@ -114,7 +114,7 @@ class Context:
     stderr: str = ""
 
 
-def parse_datetime(output: str) -> datetime.datetime:
+def parse_exif_datetime(output: str) -> datetime.datetime:
     if not output:
         raise ExifToolError("Output is empty")
 
@@ -145,6 +145,23 @@ def parse_datetime(output: str) -> datetime.datetime:
     return timestamp
 
 
+def parse_xmp_datetime(output: Path) -> datetime.datetime:
+    # Expected output
+    # 'Create Date                     : 2005:09:14 10:07:08+08:00\n'
+
+    if not output:
+        raise ExifToolError("Output is empty")
+
+    prefix, timestamp = output.strip().split(" : ")
+    assert prefix.startswith("Create Date ")
+
+    iso_timestamp = timestamp.replace(":", "-", 2)
+
+    ts = datetime.datetime.fromisoformat(iso_timestamp)
+
+    return ts
+
+
 def read_datetime(file_path: Path) -> datetime.datetime:
     """Return Date/Time from file, if any. Otherwise, raise."""
     cmd = f"exiftool -AllDates {str(file_path)!r}"
@@ -157,7 +174,7 @@ def read_datetime(file_path: Path) -> datetime.datetime:
 
     # Extract timestamp and format it as 'YYYY-MM-DD hh:mm:ss'
     output = completed_process.stdout.decode("utf-8")
-    timestamp = parse_datetime(output)
+    timestamp = parse_exif_datetime(output)
     return timestamp
 
 
@@ -177,7 +194,7 @@ def read_google_timestamp(path: Path) -> Optional[datetime.datetime]:
     if not output:
         return None
 
-    timestamp = parse_datetime(output)
+    timestamp = parse_xmp_datetime(output)
     return timestamp
 
 
@@ -225,6 +242,47 @@ def write_ts(path: Path, *, ts: datetime.datetime, backup: bool = False) -> None
         raise ExifToolError(error_message)
 
     completed_process_2 = subprocess.run(cmd_2, capture_output=True, shell=True)
+
+    if completed_process_2.returncode != 0:
+        error_message = f"Writing date and time to '{path}' >>> "
+        error_message += completed_process_2.stderr.decode("utf-8").rstrip("\n")
+        # TODO: raise context!
+        raise ExifToolError(error_message)
+
+
+def escape_chars_in_path(path: Path) -> str:
+    uri = str(path.absolute())
+    fixed_uri = uri.replace(" ", "\ ")
+    return fixed_uri
+
+
+def write_ts_raw(path: Path, *, ts: datetime.datetime, backup: bool = False) -> None:
+    """Write Date/Time to file.
+
+    The Date/Time tag refers to the moment when the image/video was captured.
+    """
+    formatted_datetime = ts.isoformat()
+
+    # exiftool -a -XMP:CreateDate="2020:01:01 13:01:01.001" foo/bar.jpg
+    cmd_1 = f'exiftool -a -XMP:CreateDate="{formatted_datetime}" "{path}"'
+    # exiftool -a "-AllDates<XMP:CreateDate" foo/bar.jpg
+    cmd_2 = f'exiftool -a "-AllDates<XMP:CreateDate" "{path}"'
+
+    if backup is False:
+        cmd_1 += " -overwrite_original"
+        cmd_2 += " -overwrite_original"
+
+    logger.debug(f"Executing {cmd_1!r}")
+    completed_process_1 = subprocess.run(cmd_1, capture_output=True, shell=True)
+
+    if completed_process_1.returncode != 0:
+        error_message = f"Writing date and time to '{path}' >>> "
+        error_message += completed_process_1.stderr.decode("utf-8").rstrip("\n")
+        # TODO: raise context!
+        raise ExifToolError(error_message)
+
+    completed_process_2 = subprocess.run(cmd_2, capture_output=True, shell=True)
+    logger.debug(f"Executing {cmd_2!r}")
 
     if completed_process_2.returncode != 0:
         error_message = f"Writing date and time to '{path}' >>> "

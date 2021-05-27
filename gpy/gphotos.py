@@ -333,7 +333,7 @@ def write_media_items(path: Path, media_items: List[MediaItem]) -> None:
 #     return session
 
 
-def upload_photo(session: AuthorizedSession, path: Path) -> None:
+def upload_media(session: AuthorizedSession, path: Path) -> None:
     data = path.read_bytes()
 
     session.headers["Content-type"] = "application/octet-stream"

@@ -3,12 +3,15 @@ from zoneinfo import ZoneInfo
 
 import pytz
 
-SPAIN = ZoneInfo("Europe/Madrid")
-UK = ZoneInfo("Europe/London")
+SPAIN_TZ_NAME = "Europe/Madrid"
+UK_TZ_NAME = "Europe/London"
+DEFAULT_TZ_NAME = SPAIN_TZ_NAME
+DEFAULT_TZ = pytz.timezone(DEFAULT_TZ_NAME)
 
+SPAIN = ZoneInfo(SPAIN_TZ_NAME)
+UK = ZoneInfo(UK_TZ_NAME)
 DEFAULT_ZONEINFO = SPAIN
 
-DEFAULT_TZ = pytz.timezone(DEFAULT_ZONEINFO.key)
 
 REPORTS_DIR = Path("reports")
 # TODO: add a file to record which state is the last
@@ -19,3 +22,5 @@ UPLOADED_MEDIA_INFO_DIR = REPORTS_DIR / "uploaded-in-gphotos"
 LOCAL_MEDIA_INFO_DIR = REPORTS_DIR / "local-dates"
 AGGREGATED_MEDIA_INFO_DIR = REPORTS_DIR / "aggregated"
 MEDIA_DIR = Path("to_backup_in_gphotos")
+
+USE_LAST_REPORT_ON_REFRESH = False

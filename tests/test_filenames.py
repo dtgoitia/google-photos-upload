@@ -1,8 +1,10 @@
 import datetime
 
 import pytest
+import pytz
 
-from gpy.filenames import parse_datetime
+from gpy.config import SPAIN, SPAIN_TZ_NAME
+from gpy.filenames import build_file_id, parse_datetime
 
 
 @pytest.mark.parametrize(
@@ -35,3 +37,24 @@ def test_parse_datetime(file_name, expected_result):
     actual_result = parse_datetime(file_name)
 
     assert actual_result == expected_result
+
+
+def test_build_file_id_without_timezone():
+    ts_no_tz = datetime.datetime(2000, 1, 1)
+    ts_utc = ts_no_tz.astimezone(pytz.utc)
+    ts_other_tz = ts_utc.astimezone(pytz.timezone(SPAIN_TZ_NAME))
+
+    file_id = build_file_id(file_name="foo", timestamp=ts_no_tz)
+    assert file_id == "foo__2000-01-01T00:00:00"
+
+
+def test_build_file_id_with_timezone():
+    ts_no_tz = datetime.datetime(2000, 1, 1)
+    ts_utc = ts_no_tz.astimezone(pytz.utc)
+    ts_other_tz = ts_utc.astimezone(pytz.timezone(SPAIN_TZ_NAME))
+
+    file_id = build_file_id(file_name="foo", timestamp=ts_utc)
+    assert file_id == "foo__2000-01-01T00:00:00"
+
+    file_id = build_file_id(file_name="foo", timestamp=ts_other_tz)
+    assert file_id == "foo__2000-01-01T00:00:00"

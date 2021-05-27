@@ -62,6 +62,7 @@ def _scan_date(
         metadata_date=metadata_date,
         google_date=google_date,
     )
+    logger.info(report)
     print_report(report)
 
     return report
