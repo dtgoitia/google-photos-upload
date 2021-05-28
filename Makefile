@@ -32,11 +32,10 @@ coverage:
 
 copy_files:
 	rm -rf "to_backup_in_gphotos/2001-2005"
-	mkdir -p "to_backup_in_gphotos/2001-2005"
-	# last not uploaded picture: 2005-09-14 - Instituto 2 (Miércoles)
+	mkdir -p "to_backup_in_gphotos"
 	scp -rp \
-	  dtg@dtg:"/home/dtg/imagenes/to_backup_in_gphotos/2001-2005/2005-09-14\ -\ Instituto\ 2\ \(Miércoles\)" \
-	  "to_backup_in_gphotos/2001-2005"
+	  dtg@dtg:"/home/dtg/imagenes/to_backup_in_gphotos/2001-2005" \
+	  "to_backup_in_gphotos"
 
 copy_one_file:
 	rm -rf "to_backup_in_gphotos/2001-2005"

@@ -5,6 +5,7 @@ auth_token_file
 # Personal files
 reports/
 to_backup_in_gphotos/
+2001-2005/
 
 # Logs
 logs/
