@@ -237,7 +237,7 @@ def reconcile() -> None:
                 breakpoint()
         elif action.type == CONVERT_TO_MP4:
             logger.info(f"Converting to mp4 for {path}")
-            path_to_mp4(path)
+            path_to_mp4(path, backup=False)
             success = True
             logger.info(f"Success converting {path} to mp4")
         elif action.type == DO_NOTHING:

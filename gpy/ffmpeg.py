@@ -9,7 +9,7 @@ class FfmpegError(Exception):
     ...
 
 
-def path_to_mp4(path: Path) -> None:
+def path_to_mp4(path: Path, backup: bool = True) -> None:
     if not path.exists():
         raise FileNotFoundError(path)
 
@@ -29,3 +29,11 @@ def path_to_mp4(path: Path) -> None:
         error_message = completed_process.stderr.decode("utf-8").strip("\n")
         logger.error(error_message)
         raise FfmpegError(error_message)
+
+    if backup is False:
+        logger.info(f"Deleting {path} to mp4...")
+        path.unlink()
+        logger.info(f"Success deleting {path}")
+        logger.info(f"Renaming {output_path} to {path} ...")
+        output_path.rename(path)
+        logger.info(f"Success renaming {output_path} to {path}")
