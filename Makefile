@@ -38,5 +38,11 @@ copy_files:
 	  dtg@dtg:"/home/dtg/imagenes/to_backup_in_gphotos/2001-2005/2005-09-14\ -\ Instituto\ 2\ \(Miércoles\)" \
 	  "to_backup_in_gphotos/2001-2005"
 
+copy_one_file:
+	rm -rf "to_backup_in_gphotos/2001-2005"
+	mkdir -p "to_backup_in_gphotos/2001-2005/2005-09-14 - Instituto 2 (Miércoles)"
+	# last not uploaded picture: 2005-09-14 - Instituto 2 (Miércoles)
+	scp dtg@dtg:"/home/dtg/imagenes/to_backup_in_gphotos/2001-2005/2005-09-14\ -\ Instituto\ 2\ \(Miércoles\)/PIC_0023.JPG" "to_backup_in_gphotos/2001-2005/2005-09-14 - Instituto 2 (Miércoles)/PIC_0023.JPG"
+
 
 .PHONY: install lint test coverage
