@@ -43,5 +43,16 @@ copy_one_file:
 	# last not uploaded picture: 2005-09-14 - Instituto 2 (Miércoles)
 	scp dtg@dtg:"/home/dtg/imagenes/to_backup_in_gphotos/2001-2005/2005-09-14\ -\ Instituto\ 2\ \(Miércoles\)/PIC_0023.JPG" "to_backup_in_gphotos/2001-2005/2005-09-14 - Instituto 2 (Miércoles)/PIC_0023.JPG"
 
+move_media_to_working_folder:
+	rm -rf "to_backup_in_gphotos/2001-2005"
+	mkdir -p "to_backup_in_gphotos/2001-2005/"
+	cp -R "2001-2005_backup/2001-2005/2005-09-15 - Basket (Jueves)" "to_backup_in_gphotos/2001-2005/"
+	cp -R "2001-2005_backup/2001-2005/2005-09-15 - Tengo una caja (Jueves)" "to_backup_in_gphotos/2001-2005/"
+
+delete_backups:
+	find to_backup_in_gphotos -type f -name "*_original" -delete
+
+delete_pictures:
+	find to_backup_in_gphotos -type f -name "*.JPG" -delete
 
 .PHONY: install lint test coverage
