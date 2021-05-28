@@ -9,6 +9,14 @@ Find out what's already uploaded in GPhotos:
 python -m gpy fetch_uploaded_media_info
 ```
 
+Workflow:
+
+  1. Copy files locally
+  1. Convert videos to mp4 + add google metadata to pictures
+  1. Upload photos if you want
+  1. Manually input videos Goolge metadata
+  1. Add google metadata to videos (this `touch`es videos with the UTC timestamp to later upload manually)
+  1. Upload videos manually
 
 ## Quick start
 
