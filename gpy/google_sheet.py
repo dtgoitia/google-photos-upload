@@ -200,6 +200,22 @@ def upload_worksheet(sh: Spreadsheet, gsheet: Worksheet) -> None:
     any_row_values = values[0]
     last_row_index = len(gsheet) + 1
     last_column_name = column_index_to_name(index=len(any_row_values))
-    range = f"A2:{last_column_name}{last_row_index}"
+    range = f"A1:{last_column_name}{last_row_index}"
 
-    sh.get_worksheet(1).update(range, values)
+    headers = [
+        "file_id",
+        "path",
+        "file_name",
+        "filename_date",
+        "metadata_date",
+        "dates_match",
+        "gphotos_compatible_metadata",
+        "ready_to_upload",
+        "uploaded",
+        "add_google_timestamp",
+        "convert_to_mp4",
+        "upload_in_next_reconcile",
+        "type",
+    ]
+    headers_and_values = [headers, *values]
+    sh.get_worksheet(1).update(range, headers_and_values)
