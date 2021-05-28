@@ -213,7 +213,7 @@ def reconcile() -> None:
             logger.info(f"Editing datetime in medatata for {path}")
             reports = scan_date(exiftool, datetime_parser, path)
             report = reports[0]
-            if report.google_date is None:
+            if report.google_date is not None:
                 logger.warning(f"Google date already exists in {path}, will do nothing")
                 return AppliedAction(action=DO_NOTHING, success=False)
 
