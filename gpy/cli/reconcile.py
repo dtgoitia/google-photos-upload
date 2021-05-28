@@ -205,36 +205,28 @@ def reconcile() -> None:
         path = action.path
         if action.type == UPLOAD:
             logger.info(f"Uploading {path}")
-            try:
-                if RECONCILE_DRY_RUN is False:
-                    upload_media(session=client._session, path=path)
-                success = True
-                logger.info("Successfully uploaded")
-            except Exception as e:
-                print(e)
-                print("something went wrong... is it worth handling it?")
-                breakpoint()
+            if RECONCILE_DRY_RUN is False:
+                upload_media(session=client._session, path=path)
+            success = True
+            logger.info("Successfully uploaded")
         elif action.type == EDIT_METADATA_DATETIME:
             logger.info(f"Editing datetime in medatata for {path}")
-            try:
-                reports = scan_date(exiftool, datetime_parser, path)
-                report = reports[0]
-                assert report.google_date is None
+            reports = scan_date(exiftool, datetime_parser, path)
+            report = reports[0]
+            if report.google_date is None:
+                logger.warning(f"Google date already exists in {path}, will do nothing")
+                return AppliedAction(action=DO_NOTHING, success=False)
 
-                if action.hardcoded_google_metadata is None:
-                    ts_in_utc = report.metadata_date.astimezone(pytz.utc)
-                    ts = ts_in_utc.astimezone(target_tz)
-                else:
-                    ts = action.hardcoded_google_metadata
+            if action.hardcoded_google_metadata is None:
+                ts_in_utc = report.metadata_date.astimezone(pytz.utc)
+                ts = ts_in_utc.astimezone(target_tz)
+            else:
+                ts = action.hardcoded_google_metadata
 
-                if RECONCILE_DRY_RUN is False:
-                    add_metadata_to_single_file(path=path, iso_timestamp=ts.isoformat())
-                success = True
-                logger.info("Successfully edited")
-            except Exception as e:
-                print(e)
-                print("something went wrong... is it worth handling it?")
-                breakpoint()
+            if RECONCILE_DRY_RUN is False:
+                add_metadata_to_single_file(path=path, iso_timestamp=ts.isoformat())
+            success = True
+            logger.info("Successfully edited")
         elif action.type == CONVERT_TO_MP4:
             logger.info(f"Converting to mp4 for {path}")
             path_to_mp4(path, backup=False)
