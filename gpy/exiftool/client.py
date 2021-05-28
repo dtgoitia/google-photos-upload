@@ -14,6 +14,8 @@ from typing import Optional
 
 import attr
 
+from gpy.filenames import get_utc_as_naive
+from gpy.filesystem import is_video
 from gpy.types import GpsCoordinates
 
 # def exiftool() -> None:
@@ -271,7 +273,7 @@ def write_ts_raw(path: Path, *, ts: datetime.datetime, backup: bool = False) -> 
     if backup is False:
         cmd_1 += " -overwrite_original"
 
-    logger.debug(f"Executing {cmd_1!r}")
+    logger.info(f"Executing {cmd_1!r}")
     completed_process_1 = subprocess.run(cmd_1, capture_output=True, shell=True)
 
     if completed_process_1.returncode != 0:
@@ -279,6 +281,21 @@ def write_ts_raw(path: Path, *, ts: datetime.datetime, backup: bool = False) -> 
         error_message += completed_process_1.stderr.decode("utf-8").rstrip("\n")
         # TODO: raise context!
         raise ExifToolError(error_message)
+
+    if not is_video(path):
+        return None
+
+    utc_ts = get_utc_as_naive(ts)
+    touch_datetime = utc_ts.strftime("%Y%m%d%H%M")
+
+    cmd_2 = f'touch -t "{touch_datetime}" "{path}"'
+    logger.info("Updating the creation time of the file (not the metadata)")
+    logger.info(f"Executing {cmd_2!r}")
+    completed_process_2 = subprocess.run(cmd_2, capture_output=True, shell=True)
+    if completed_process_2.returncode != 0:
+        error_message = completed_process_2.stderr.decode("utf-8").rstrip("\n")
+        raise Exception(error_message)
+    logger.info("Successfully updated the creation time of the file")
 
 
 def write_geolocation(

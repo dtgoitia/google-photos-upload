@@ -8,15 +8,20 @@ import pytz
 DatetimeParser = Callable[[str], Optional[datetime.datetime]]
 
 
+def get_utc_as_naive(ts: datetime.datetime) -> datetime.datetime:
+    assert ts
+    if ts.tzinfo is None:
+        return ts
+
+    return ts.astimezone(pytz.utc).replace(tzinfo=None)
+
+
 def build_file_id(file_name: str, timestamp: Union[datetime.date, datetime.datetime]):
     if timestamp is None:
         # AVI files don't have any date
         return f"{file_name}__no-date"
 
-    if timestamp.tzinfo is None:
-        ts = timestamp
-    else:
-        ts = timestamp.astimezone(pytz.utc).replace(tzinfo=None)
+    ts = get_utc_as_naive(timestamp)
 
     return f"{file_name}__{ts.isoformat()}"
 
