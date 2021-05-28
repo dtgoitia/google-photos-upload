@@ -7,7 +7,7 @@ import click
 from gpy.exiftool import client as exiftool_client
 from gpy.filenames import DatetimeParser
 from gpy.filenames import parse_datetime as datetime_parser
-from gpy.filesystem import get_paths_recursive, write_reports
+from gpy.filesystem import get_paths_recursive, is_video, write_reports
 from gpy.types import FileDateReport, print_report
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,11 @@ def _scan_date(
     logger.info(f"scanning {path}")
 
     filename_date = parse_datetime(path.name)
-    metadata_date = exiftool.read_datetime(path)
+
+    if is_video(path):
+        metadata_date = None
+    else:
+        metadata_date = exiftool.read_datetime(path)
     google_date = exiftool.read_google_timestamp(path)
     logger.debug("scan successfully completed")
 

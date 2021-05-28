@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime
 import logging
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import attr
 import gspread
@@ -12,20 +12,24 @@ import pytz
 from gpy.cli.add_google_timestamp import add_metadata_to_single_file
 from gpy.cli.meta import edit_metadata_datetime
 from gpy.cli.scan import scan_date
-from gpy.config import AGGREGATED_MEDIA_INFO_DIR, DEFAULT_TZ
+from gpy.config import (
+    AGGREGATED_MEDIA_INFO_DIR,
+    DEFAULT_TZ,
+    RECONCILE_DRY_RUN,
+    USE_ACTIONS_IN_GSHEET,
+)
 from gpy.exiftool import client as exiftool
+from gpy.ffmpeg import path_to_mp4
 from gpy.filenames import parse_datetime as datetime_parser
 from gpy.filesystem import read_aggregated_reports
 from gpy.google_sheet import GSheetRow, Worksheet, fetch_worksheet
 from gpy.gphotos import GooglePhotosClient, upload_media
 from gpy.log import get_log_format, get_logs_output_path
 
-USE_ACTIONS_IN_GSHEET = True
-DRY_RUN = False
-
 DO_NOTHING = "DO_NOTHING"  # This action does nothing on the file
 UPLOAD = "UPLOADJ"  # Action representing uploading a media to GPhotos
 EDIT_METADATA_DATETIME = "EDIT_METADATA_DATETIME"
+CONVERT_TO_MP4 = "CONVERT_TO_MP4"
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -53,6 +57,7 @@ class Action:
 
     type: str
     path: Path
+    hardcoded_google_metadata: Optional[datetime.datetime] = None
 
 
 @attr.s(auto_attribs=True, frozen=True)
@@ -104,14 +109,29 @@ def determine_action_manually(local: GSheetRow, remote: GSheetRow) -> Action:
         return Action(type=UPLOAD, path=path)
 
     if remote.add_google_timestamp:
+        if remote.gphotos_compatible_metadata:
+            logger.info(f"Action: EDIT_METADATA_DATETIME for file {file_id!r}")
+            return Action(
+                type=EDIT_METADATA_DATETIME,
+                path=path,
+                hardcoded_google_metadata=remote.gphotos_compatible_metadata,
+            )
         logger.info(f"Action: EDIT_METADATA_DATETIME for file {file_id!r}")
         return Action(type=EDIT_METADATA_DATETIME, path=path)
+
+    if remote.convert_to_mp4:
+        logger.info(f"Action: CONVERT_TO_MP4 for file {file_id!r}")
+        return Action(type=CONVERT_TO_MP4, path=path)
 
     logger.info(f"Action: DO_NOTHING for file {file_id!r}")
     return Action(type=DO_NOTHING, path=path)
 
 
 def determine_action_automatically(local: GSheetRow, remote: GSheetRow) -> Action:
+    logger.warning(
+        "Applying actions automatically - decision only based in files metadata, GSheet"
+        " data will be ignored"
+    )
     file_id = local.file_id
     path = local.path
     logger.info(f"Determining action for {file_id!r}")
@@ -186,7 +206,7 @@ def reconcile() -> None:
         if action.type == UPLOAD:
             logger.info(f"Uploading {path}")
             try:
-                if DRY_RUN is False:
+                if RECONCILE_DRY_RUN is False:
                     upload_media(session=client._session, path=path)
                 success = True
                 logger.info("Successfully uploaded")
@@ -200,24 +220,31 @@ def reconcile() -> None:
                 reports = scan_date(exiftool, datetime_parser, path)
                 report = reports[0]
                 assert report.google_date is None
-                ts_in_utc = report.metadata_date.astimezone(pytz.utc)
-                ts = ts_in_utc.astimezone(target_tz)
-                if DRY_RUN is False:
-                    add_metadata_to_single_file(
-                        path=path,
-                        iso_timestamp=ts.isoformat(),
-                    )
+
+                if action.hardcoded_google_metadata is None:
+                    ts_in_utc = report.metadata_date.astimezone(pytz.utc)
+                    ts = ts_in_utc.astimezone(target_tz)
+                else:
+                    ts = action.hardcoded_google_metadata
+
+                if RECONCILE_DRY_RUN is False:
+                    add_metadata_to_single_file(path=path, iso_timestamp=ts.isoformat())
                 success = True
                 logger.info("Successfully edited")
             except Exception as e:
                 print(e)
                 print("something went wrong... is it worth handling it?")
                 breakpoint()
+        elif action.type == CONVERT_TO_MP4:
+            logger.info(f"Converting to mp4 for {path}")
+            path_to_mp4(path)
+            success = True
+            logger.info(f"Success converting {path} to mp4")
         elif action.type == DO_NOTHING:
             logger.info(f"No action for {path}")
             success = True
         else:
-            logger.warning(f"")
+            logger.error("Unexpected situation happened!")
             breakpoint()
             raise NotImplementedError("Unexpected situation happened!")
 
@@ -229,7 +256,7 @@ def reconcile() -> None:
     remote = read_latest_remote_gsheet()
     actions = determine_actions(local, remote)
     # TODO: worth persisting actions before executing?
-    if DRY_RUN is False:
+    if RECONCILE_DRY_RUN is False:
         applied_actions = list(map(apply_action, actions))
     # update gsheet? probably worth letting the 'refresh' bit to be done manually
     # in git when you push, your local state updates, no need to refetch :/

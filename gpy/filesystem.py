@@ -10,7 +10,11 @@ logger = logging.getLogger(__name__)
 
 
 def is_supported(path: Path) -> bool:
-    return path.suffix.lower() in (".jpg", ".png", ".mp4", ".3gp")
+    return path.suffix.lower() in (".jpg", ".png", ".mp4", ".3gp", ".avi")
+
+
+def is_video(path: Path) -> bool:
+    return path.suffix.lower() in (".mp4", ".3gp", ".avi")
 
 
 def get_paths_recursive(*, root_path: Path) -> Iterator[Path]:

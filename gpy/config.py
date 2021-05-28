@@ -24,3 +24,5 @@ AGGREGATED_MEDIA_INFO_DIR = REPORTS_DIR / "aggregated"
 MEDIA_DIR = Path("to_backup_in_gphotos")
 
 USE_LAST_REPORT_ON_REFRESH = False
+USE_ACTIONS_IN_GSHEET = True
+RECONCILE_DRY_RUN = False

@@ -81,6 +81,7 @@ def get_updated_state(
             ready_to_upload=date_report.is_ready_to_upload,
             uploaded=is_uploaded,
             add_google_timestamp=False,
+            convert_to_mp4=False,
             upload_in_next_reconcile=False,
         )
         file_report.append(row)

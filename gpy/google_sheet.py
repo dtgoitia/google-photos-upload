@@ -27,6 +27,7 @@ class GSheetRow:
     ready_to_upload: bool
     uploaded: bool
     add_google_timestamp: bool
+    convert_to_mp4: bool
     upload_in_next_reconcile: bool
 
     def to_gsheet(self) -> List[Union[str, bool]]:
@@ -55,6 +56,7 @@ class GSheetRow:
         # else:
         #     upload_in_next_reconcile = self.upload_in_next_reconcile
 
+        # Order matters!
         return [
             self.file_id,
             str(self.path),
@@ -66,6 +68,7 @@ class GSheetRow:
             self.ready_to_upload,
             self.uploaded,
             self.add_google_timestamp,
+            self.convert_to_mp4,
             self.upload_in_next_reconcile,
         ]
 
@@ -80,12 +83,13 @@ class FileReport:
     file_id: FileId
     path: Path
     filename_date: Optional[datetime.datetime]
-    metadata_date: datetime.datetime
+    metadata_date: Optional[datetime.datetime]
     dates_match: bool
     gphotos_compatible_metadata: Optional[datetime.datetime]
     ready_to_upload: bool
     uploaded: bool
     add_google_timestamp: bool
+    convert_to_mp4: bool
     upload_in_next_reconcile: bool
 
     def to_gsheet_row(self) -> GSheetRow:
@@ -99,6 +103,7 @@ class FileReport:
             ready_to_upload=self.ready_to_upload,
             uploaded=self.uploaded,
             add_google_timestamp=self.add_google_timestamp,
+            convert_to_mp4=self.convert_to_mp4,
             upload_in_next_reconcile=self.upload_in_next_reconcile,
         )
 
@@ -147,6 +152,7 @@ def fetch_worksheet(sh: Spreadsheet) -> Worksheet:
             ready_to_upload=cast_bool(row["ready_to_upload"]),
             uploaded=cast_bool(row["uploaded"]),
             add_google_timestamp=cast_bool(row["add_google_timestamp"]),
+            convert_to_mp4=cast_bool(row["convert_to_mp4"]),
             upload_in_next_reconcile=cast_bool(row["upload_in_next_reconcile"]),
         )
 

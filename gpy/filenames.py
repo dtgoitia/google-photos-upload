@@ -9,6 +9,10 @@ DatetimeParser = Callable[[str], Optional[datetime.datetime]]
 
 
 def build_file_id(file_name: str, timestamp: Union[datetime.date, datetime.datetime]):
+    if timestamp is None:
+        # AVI files don't have any date
+        return f"{file_name}__no-date"
+
     if timestamp.tzinfo is None:
         ts = timestamp
     else:
