@@ -25,7 +25,7 @@ def add_metadata_to_single_file(path: Path, iso_timestamp: str) -> None:
         # exiftool -AllDates path/to/my/media.jpg
         if not path.exists:
             raise FileNotFoundError(path)
-        exiftool.write_ts_raw(path, ts=ts, backup=True)
+        exiftool.write_ts_raw(path, ts=ts, backup=False)
     except ExifToolError as exc:
         logger.warning(exc.args[0])
 
