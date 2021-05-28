@@ -56,6 +56,8 @@ class GSheetRow:
         # else:
         #     upload_in_next_reconcile = self.upload_in_next_reconcile
 
+        file_type = self.path.suffix
+
         # Order matters!
         return [
             self.file_id,
@@ -70,6 +72,7 @@ class GSheetRow:
             self.add_google_timestamp,
             self.convert_to_mp4,
             self.upload_in_next_reconcile,
+            file_type,
         ]
 
 
