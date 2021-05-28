@@ -5,7 +5,7 @@ refresh:
 	python -m gpy.cli.refresh_gsheet
 
 clean_logs:
-	find . -name "*.log"
+	find . -name "*.log" -delete
 
 requirements:
 	rm requirements.txt
