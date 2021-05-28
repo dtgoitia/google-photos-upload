@@ -216,16 +216,17 @@ def save_file_aggregated_reports(reports: List[FileReport]) -> None:
 
 
 def refresh_google_spreadsheet_to_latest_state() -> None:
-    start = datetime.datetime(2005, 6, 1)
-    end = datetime.datetime(2007, 1, 1)
+    # start = datetime.datetime(2005, 6, 1)
+    # end = datetime.datetime(2007, 1, 1)
 
-    # check what's in GPhotos
-    if True:  # you really don't care about what's uploaded... ¬¬
-        uploaded_media_info_path = get_last_report_gphotos_path(start, end)
-    else:
-        uploaded_media_info_path = fetch_uploaded_media_info_between_dates(start, end)
-    uploaded_media_items = read_uploaded_media_report(uploaded_media_info_path)
-    uploaded_file_ids = get_uploaded_file_ids(uploaded_media_items)
+    # # check what's in GPhotos
+    # if True:  # you really don't care about what's uploaded... ¬¬
+    #     uploaded_media_info_path = get_last_report_gphotos_path(start, end)
+    # else:
+    #     uploaded_media_info_path = fetch_uploaded_media_info_between_dates(start, end)
+    # uploaded_media_items = read_uploaded_media_report(uploaded_media_info_path)
+    # uploaded_file_ids = get_uploaded_file_ids(uploaded_media_items)
+    uploaded_file_ids = set()
 
     # check what's is localy - ready to upload or not
     if USE_LAST_REPORT_ON_REFRESH:
