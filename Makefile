@@ -46,8 +46,17 @@ copy_one_file:
 move_media_to_working_folder:
 	rm -rf "to_backup_in_gphotos/2001-2005"
 	mkdir -p "to_backup_in_gphotos/2001-2005/"
-	cp -R "2001-2005_backup/2001-2005/2005-09-15 - Basket (Jueves)" "to_backup_in_gphotos/2001-2005/"
-	cp -R "2001-2005_backup/2001-2005/2005-09-15 - Tengo una caja (Jueves)" "to_backup_in_gphotos/2001-2005/"
+	# cp -R "2001-2005_backup/2001-2005/_____" "to_backup_in_gphotos/2001-2005/"
+	cp -R "2001-2005_backup/2001-2005/2005-09-18 - Con los primos en Lujua (Domingo)" "to_backup_in_gphotos/2001-2005/"
+	cp -R "2001-2005_backup/2001-2005/2005-09-19 - Instituto 3 (Lunes)" "to_backup_in_gphotos/2001-2005/"
+	cp -R "2001-2005_backup/2001-2005/2005-09-22 - Celebrando el Cumple de Javier en Telepizza 2005" "to_backup_in_gphotos/2001-2005/"
+	cp -R "2001-2005_backup/2001-2005/2005-09-23 - Broma a Laura (Viernes)" "to_backup_in_gphotos/2001-2005/"
+	cp -R "2001-2005_backup/2001-2005/2005-09-24 - Celebrando el Cumple de Javier en la ofi" "to_backup_in_gphotos/2001-2005/"
+	cp -R "2001-2005_backup/2001-2005/2005-10-02 - Polideportivo (Domingo)" "to_backup_in_gphotos/2001-2005/"
+	cp -R "2001-2005_backup/2001-2005/2005-10-05 - Instituto 4 (Jueves)" "to_backup_in_gphotos/2001-2005/"
+	cp -R "2001-2005_backup/2001-2005/2005-10-07 - Break en el Polideportivo Sakoneta" "to_backup_in_gphotos/2001-2005/"
+	cp -R "2001-2005_backup/2001-2005/2005-10-07 - Instituto 5 (Viernes)" "to_backup_in_gphotos/2001-2005/"
+	cp -R "2001-2005_backup/2001-2005/2005-10-08 - Barandiaran Goikoa (Sábado)" "to_backup_in_gphotos/2001-2005/"
 
 delete_backups:
 	find to_backup_in_gphotos -type f -name "*_original" -delete
