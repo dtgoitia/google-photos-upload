@@ -34,6 +34,3 @@ def path_to_mp4(path: Path, backup: bool = True) -> None:
         logger.info(f"Deleting {path} to mp4...")
         path.unlink()
         logger.info(f"Success deleting {path}")
-        logger.info(f"Renaming {output_path} to {path} ...")
-        output_path.rename(path)
-        logger.info(f"Success renaming {output_path} to {path}")
