@@ -265,12 +265,11 @@ def write_ts_raw(path: Path, *, ts: datetime.datetime, backup: bool = False) -> 
 
     # exiftool -a -XMP:CreateDate="2020:01:01 13:01:01.001" foo/bar.jpg
     cmd_1 = f'exiftool -a -XMP:CreateDate="{formatted_datetime}" "{path}"'
+    # Do not run this, it fucks up all the timezones and file_id
     # exiftool -a "-AllDates<XMP:CreateDate" foo/bar.jpg
-    cmd_2 = f'exiftool -a "-AllDates<XMP:CreateDate" "{path}"'
 
     if backup is False:
         cmd_1 += " -overwrite_original"
-        cmd_2 += " -overwrite_original"
 
     logger.debug(f"Executing {cmd_1!r}")
     completed_process_1 = subprocess.run(cmd_1, capture_output=True, shell=True)
@@ -278,15 +277,6 @@ def write_ts_raw(path: Path, *, ts: datetime.datetime, backup: bool = False) -> 
     if completed_process_1.returncode != 0:
         error_message = f"Writing date and time to '{path}' >>> "
         error_message += completed_process_1.stderr.decode("utf-8").rstrip("\n")
-        # TODO: raise context!
-        raise ExifToolError(error_message)
-
-    completed_process_2 = subprocess.run(cmd_2, capture_output=True, shell=True)
-    logger.debug(f"Executing {cmd_2!r}")
-
-    if completed_process_2.returncode != 0:
-        error_message = f"Writing date and time to '{path}' >>> "
-        error_message += completed_process_2.stderr.decode("utf-8").rstrip("\n")
         # TODO: raise context!
         raise ExifToolError(error_message)
 
