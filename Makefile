@@ -61,6 +61,9 @@ move_media_to_working_folder:
 convert_avi_files_to_mp4:
 	python -m gpy.convert_avi_files_to_mp4
 
+add_metadata_to_pictures:
+	python -m gpy.add_metadata_to_pictures
+
 delete_backups:
 	find to_backup_in_gphotos -type f -name "*_original" -delete
 
