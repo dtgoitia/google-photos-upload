@@ -66,6 +66,17 @@ def adb_ls(remote_uri: Path) -> List[Path]:
     return files_or_folders
 
 
+def assert_adb_check_file_exists(remote_file: Path) -> None:
+    remote_dir = remote_file.parent
+    paths = adb_ls(remote_uri=remote_dir)
+
+    file_names = [path.name for path in paths]
+    file_name = remote_file.name
+
+    assert file_name in file_names, f"File {remote_file} does not exist"
+    logger.info(f"File {remote_file} exists")
+
+
 if __name__ == "__main__":
     logger = logging.getLogger(__name__)
 
@@ -74,8 +85,12 @@ if __name__ == "__main__":
     logging.basicConfig(filename=logs_path, format=log_format, level=logging.DEBUG)
 
     # logger.info("Running CLI command")
-
+    remote_uri = Path("/storage/self/primary/DCIM/Camera")
     assert_is_device_connected(device_id=AQUARIS_PRO_X)
-    files = adb_ls(remote_uri="/storage/self/primary/DCIM/Camera")
-    breakpoint()
+    files = adb_ls(remote_uri=remote_uri)
+    existing_file = remote_uri / "IMG_20190104_160010_369.jpg"
+    assert_adb_check_file_exists(remote_file=existing_file)
+
+    non_existing_file = remote_uri / "kk.jpg"
+    assert_adb_check_file_exists(remote_file=non_existing_file)
     # logger.info("CLI command ran to completion")
