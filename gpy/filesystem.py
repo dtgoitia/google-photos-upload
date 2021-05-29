@@ -79,3 +79,13 @@ def read_aggregated_reports(path: Path) -> List[FileReport]:
     data = read_json(path)
     reports = structure(data, List[FileReport])
     return reports
+
+
+def save_table(path: Path, data: str) -> None:
+    if path.exists():
+        path.unlink()
+
+    if not path.parent.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+    path.write_text(data)

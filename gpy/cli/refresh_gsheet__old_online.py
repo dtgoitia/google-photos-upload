@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import List, Set
 
 import attr
-from tabulate import tabulate
+import gspread
 
 from gpy.cli.report_uploaded import fetch_uploaded_media_info_between_dates
 from gpy.cli.scan import scan_date
@@ -15,15 +15,20 @@ from gpy.config import (
     DEFAULT_TZ,
     LOCAL_MEDIA_INFO_DIR,
     MEDIA_DIR,
-    TABLE_AS_STRING_PATH,
     UPLOADED_MEDIA_INFO_DIR,
     USE_LAST_REPORT_ON_REFRESH,
 )
 from gpy.exiftool import client as exiftool_client
 from gpy.filenames import build_file_id
 from gpy.filenames import parse_datetime as datetime_parser
-from gpy.filesystem import read_reports, save_table, write_json, write_reports
-from gpy.google_sheet import FileId, FileReport
+from gpy.filesystem import read_reports, write_json, write_reports
+from gpy.google_sheet import (
+    FileId,
+    FileReport,
+    fetch_worksheet,
+    merge,
+    upload_worksheet,
+)
 from gpy.gphotos import MediaItem, read_media_items
 from gpy.log import get_log_format, get_logs_output_path
 from gpy.types import FileDateReport, unstructure
@@ -57,13 +62,14 @@ def get_uploaded_file_ids(media_items: List[MediaItem]) -> Set[FileId]:
 
 
 def get_updated_state(
+    uploaded_file_ids: Set[FileId],
     local_files: List[FileDateReport],
 ) -> List[FileReport]:
-    # NOTE: simply mapping between FileDateReport to FileReport
     file_report = []
     for date_report in local_files:
         timestamp = date_report.metadata_date or date_report.filename_date
         file_id = build_file_id(date_report.path.name, timestamp)
+        is_uploaded = file_id in uploaded_file_ids
 
         row = FileReport(
             file_id=file_id,
@@ -73,7 +79,7 @@ def get_updated_state(
             dates_match=date_report.dates_match,
             gphotos_compatible_metadata=date_report.google_date,
             ready_to_upload=date_report.is_ready_to_upload,
-            uploaded=False,
+            uploaded=is_uploaded,
             add_google_timestamp=False,
             convert_to_mp4=False,
             upload_in_next_reconcile=False,
@@ -83,13 +89,75 @@ def get_updated_state(
     return file_report
 
 
+def add_timezone(report: FileDateReport, tz=DEFAULT_TZ) -> FileDateReport:
+    if report.filename_date:
+        filename_date = tz.localize(report.filename_date)
+    else:
+        filename_date = None
+
+    if report.metadata_date:
+        metadata_date = tz.localize(report.metadata_date)
+    else:
+        metadata_date = None
+
+    if report.google_date:
+        google_date = tz.localize(report.google_date)
+    else:
+        google_date = None
+
+    tz_aware_report = FileDateReport(
+        path=report.path,
+        filename_date=filename_date,
+        metadata_date=metadata_date,
+        google_date=google_date,
+        gps=report.gps,
+    )
+
+    return tz_aware_report
+
+
+@attr.s(auto_attribs=True, frozen=True)
+class UploadedMediaInfoPath:
+    start: datetime.datetime
+    end: datetime.datetime
+    path: Path
+    created_on: datetime.datetime
+
+    @classmethod
+    def from_path(cls, path: Path) -> UploadedMediaInfoPath:
+        _, date_range, timestamp_as_str = path.stem.split("__")
+
+        start, end = map(datetime.datetime.fromisoformat, date_range.split("_"))
+        created_on = datetime.datetime.fromisoformat(timestamp_as_str)
+
+        return cls(start=start, end=end, path=path, created_on=created_on)
+
+
+def get_last_report_gphotos_path(
+    start: datetime.datetime, end: datetime.datetime
+) -> Path:
+    def matches_dates(path: UploadedMediaInfoPath) -> bool:
+        return path.start == start and path.end == end
+
+    json_paths = UPLOADED_MEDIA_INFO_DIR.glob("*.json")
+    parsed_paths = map(UploadedMediaInfoPath.from_path, json_paths)
+    paths_of_interest = filter(matches_dates, parsed_paths)
+
+    most_recent_report: UploadedMediaInfoPath = next(paths_of_interest)
+    for report in paths_of_interest:
+        if most_recent_report.created_on < report.created_on:
+            most_recent_report = report
+
+    return most_recent_report.path
+
+
 @attr.s(auto_attribs=True, frozen=True)
 class LocalMediaReportPath:
     path: Path
     created_on: datetime.datetime
 
     @classmethod
-    def from_path(cls, path: Path) -> LocalMediaReportPath:
+    def from_path(cls, path: Path) -> UploadedMediaInfoPath:
         _, timestamp_as_str = path.stem.split("__")
 
         created_on = datetime.datetime.fromisoformat(timestamp_as_str)
@@ -147,20 +215,20 @@ def save_file_aggregated_reports(reports: List[FileReport]) -> None:
     return path
 
 
-TableAsStr = str
-
-
-def convert_to_local_plain_text_spreadsheet(reports: List[FileReport]) -> TableAsStr:
-    # >>> print(tabulate([["Name","Age"],["Alice",24],["Bob",19]],
-    # ...                headers="firstrow"))
-    headers = FileReport.table_headers()
-    body_data = [report.to_tabular() for report in reports]
-    tabular_data = [headers, *body_data]
-    table_as_str = tabulate(tabular_data=tabular_data, headers="firstrow")
-    return table_as_str
-
-
 def refresh_google_spreadsheet_to_latest_state() -> None:
+    # start = datetime.datetime(2005, 6, 1)
+    # end = datetime.datetime(2007, 1, 1)
+
+    # # check what's in GPhotos
+    # if True:  # you really don't care about what's uploaded... ¬¬
+    #     uploaded_media_info_path = get_last_report_gphotos_path(start, end)
+    # else:
+    #     uploaded_media_info_path = fetch_uploaded_media_info_between_dates(start, end)
+    # uploaded_media_items = read_uploaded_media_report(uploaded_media_info_path)
+    # uploaded_file_ids = get_uploaded_file_ids(uploaded_media_items)
+    uploaded_file_ids = set()
+
+    # check what's is localy - ready to upload or not
     if USE_LAST_REPORT_ON_REFRESH:
         local_files_report_path = get_last_local_report_path()
     else:
@@ -168,15 +236,35 @@ def refresh_google_spreadsheet_to_latest_state() -> None:
     current_local_files = read_reports(local_files_report_path)
 
     # rebuild new GSheet state
-    file_aggregated_reports = get_updated_state(current_local_files)
+    file_aggregated_reports = get_updated_state(uploaded_file_ids, current_local_files)
 
     # store new GSheet state localy with timestamp
     save_file_aggregated_reports(file_aggregated_reports)
 
-    # Pushing new state to local table
-    table_as_str = convert_to_local_plain_text_spreadsheet(file_aggregated_reports)
-    logger.info(f"Refreshing table at {TABLE_AS_STRING_PATH}")
-    save_table(path=TABLE_AS_STRING_PATH, data=table_as_str)
+    # Pushing new state to GSheet
+    logger.info("Authenticating with Google Spreadsheet API...")
+    gc = gspread.oauth()
+
+    spreadsheet_name = "Photo backup tracker"
+    sh = gc.open(spreadsheet_name)
+
+    logger.info(f"Fetching data from the {spreadsheet_name!r} spreadsheet...")
+    worksheet = fetch_worksheet(sh)
+
+    logger.info("Merging report data with the spreadsheet...")
+    updated_gsheet = merge(worksheet, file_aggregated_reports)
+
+    logger.info("Uploading updated data to the spreadsheet...")
+    upload_worksheet(sh, updated_gsheet)
+    logger.info("Report upload successfuly completed")
+
+    # TODO: in the `reconcile` command, read state from GSheet - which has been manually updated
+    # TODO: check local state, compare with GSheet
+    # TODO: apply required changes to change local state to GSheet
+    # TODO: update GSheet with achieved changes (don't update unachieved changes in
+    # GSheet, but log missing unachieved changes and why it was not possible to achieve them)
+
+    # Keep log of what has been uploaded when in a log file
 
 
 if __name__ == "__main__":

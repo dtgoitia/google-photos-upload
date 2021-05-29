@@ -23,6 +23,7 @@ LOCAL_MEDIA_INFO_DIR = REPORTS_DIR / "local-dates"
 AGGREGATED_MEDIA_INFO_DIR = REPORTS_DIR / "aggregated"
 MEDIA_DIR = Path("to_backup_in_gphotos")
 
+TABLE_AS_STRING_PATH = Path("table_as_string.txt")
 USE_LAST_REPORT_ON_REFRESH = False
 USE_ACTIONS_IN_GSHEET = True
 RECONCILE_DRY_RUN = False

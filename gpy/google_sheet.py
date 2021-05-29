@@ -1,7 +1,7 @@
 import copy
 import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import attr
 from gspread.models import Spreadsheet
@@ -109,6 +109,55 @@ class FileReport:
             convert_to_mp4=self.convert_to_mp4,
             upload_in_next_reconcile=self.upload_in_next_reconcile,
         )
+
+    def to_tabular(self) -> List[str]:
+        # order must match with self.table_headers()
+        row = [
+            self.file_id,
+            self.filename_date,
+            self.metadata_date,
+            self.dates_match,
+            self.gphotos_compatible_metadata,
+            self.ready_to_upload,
+            self.add_google_timestamp,
+            self.convert_to_mp4,
+            self.upload_in_next_reconcile,
+            self.path,
+            self.uploaded,
+        ]
+        return row
+
+    @staticmethod
+    def table_headers() -> List[str]:
+        return [
+            "file_id",
+            "filename_date",
+            "metadata_date",
+            "dates_match",
+            "gphotos_compatible_metadata",
+            "ready_to_upload",
+            "add_google_timestamp",
+            "convert_to_mp4",
+            "upload_in_next_reconcile",
+            "path",
+            "uploaded",
+        ]
+
+    # def to_dict(self) -> Dict[str, Any]:
+    #     row = {
+    #         "file_id": self.file_id,
+    #         "path": self.path,
+    #         "filename_date": self.filename_date,
+    #         "metadata_date": self.metadata_date,
+    #         "dates_match": self.dates_match,
+    #         "gphotos_compatible_metadata": self.gphotos_compatible_metadata,
+    #         "ready_to_upload": self.ready_to_upload,
+    #         "uploaded": self.uploaded,
+    #         "add_google_timestamp": self.add_google_timestamp,
+    #         "convert_to_mp4": self.convert_to_mp4,
+    #         "upload_in_next_reconcile": self.upload_in_next_reconcile,
+    #     }
+    #     return row
 
 
 def cast_datetime(s: str) -> Optional[datetime.datetime]:
