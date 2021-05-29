@@ -67,7 +67,10 @@ def adb_ls(remote_uri: Path) -> List[Path]:
 
 
 def assert_adb_check_file_exists(remote_file: Path) -> None:
+    assert isinstance(remote_file, Path), f"{remote_file} must be a Path"
     remote_dir = remote_file.parent
+
+    logger.info(f"Checking that {remote_file} exists...")
     paths = adb_ls(remote_uri=remote_dir)
 
     file_names = [path.name for path in paths]
@@ -75,6 +78,19 @@ def assert_adb_check_file_exists(remote_file: Path) -> None:
 
     assert file_name in file_names, f"File {remote_file} does not exist"
     logger.info(f"File {remote_file} exists")
+
+
+def adb_rm(remote: Path) -> None:
+    assert_adb_check_file_exists(remote.parent)  # Ensure destiny dir exists
+    cmd = f'adb shell "rm {remote}"'
+
+    logger.info(f"Deleting {remote} ...")
+    completed_process = subprocess.run(cmd, capture_output=True, shell=True)
+
+    if completed_process.returncode != 0:
+        error_message = completed_process.stderr.decode("utf-8").strip()
+        raise AdbError(error_message)
+    logger.info(f"Successfully deleted {remote}")
 
 
 if __name__ == "__main__":
@@ -91,6 +107,10 @@ if __name__ == "__main__":
     existing_file = remote_uri / "IMG_20190104_160010_369.jpg"
     assert_adb_check_file_exists(remote_file=existing_file)
 
-    non_existing_file = remote_uri / "kk.jpg"
-    assert_adb_check_file_exists(remote_file=non_existing_file)
+    # non_existing_file = remote_uri / "kk.jpg"
+    # assert_adb_check_file_exists(remote_file=non_existing_file)
+
+    uri = Path("/storage/self/primary/DCIM/Camera/00.png")
+    adb_rm(uri)
+
     # logger.info("CLI command ran to completion")
