@@ -15,28 +15,10 @@ class AdbError(Exception):
     ...
 
 
-# def foo(device: DeviceId = AQUARIS_PRO_X) -> bool:
-#     cmd_1 = "adb devices"
-#     cmd_2 = f'exiftool -a "-AllDates<XMP:CreateDate" {path}'
-
-#     completed_process_1 = subprocess.run(cmd_1, capture_output=True, shell=True)
-
-#     if completed_process_1.returncode != 0:
-#         error_message = completed_process_1.stderr.decode("utf-8").strip()
-#         raise AdbError(error_message)
-
-#     completed_process_2 = subprocess.run(cmd_2, capture_output=True, shell=True)
-
-#     if completed_process_2.returncode != 0:
-#         error_message = completed_process_2.stderr.decode("utf-8").strip()
-#         raise AdbError(error_message)
-
-
-# adb push "local/file.jpg" "remote/file.jpg"
-# adb devices
 def assert_is_device_connected(device_id: DeviceId = AQUARIS_PRO_X) -> None:
     cmd = "adb devices"
     logger.info(f"Checking in device {device_id} is connected...")
+    logger.debug(f"Executing {cmd!r}")
     completed_process = subprocess.run(cmd, capture_output=True, shell=True)
 
     if completed_process.returncode != 0:
@@ -55,6 +37,7 @@ def assert_is_device_connected(device_id: DeviceId = AQUARIS_PRO_X) -> None:
 
 def adb_ls(remote_uri: Path) -> List[Path]:
     cmd = f'adb shell ls "{remote_uri}"'
+    logger.debug(f"Executing {cmd!r}")
     completed_process = subprocess.run(cmd, capture_output=True, shell=True)
 
     if completed_process.returncode != 0:
@@ -105,8 +88,10 @@ def adb_push(local: Path, remote: Path) -> None:
 
     assert_adb_check_file_exists(remote.parent)  # Ensure destiny dir exists
 
+    # adb push "local/file.jpg" "remote/file.jpg"
     cmd = f'adb push "{local}" "{remote}"'
 
+    logger.debug(f"Executing {cmd!r}")
     completed_process = subprocess.run(cmd, capture_output=True, shell=True)
 
     if completed_process.returncode != 0:
@@ -120,8 +105,8 @@ def adb_get_creation_time(remote: Path) -> datetime.datetime:
     file_name = remote.name
 
     cmd = f'adb shell "ls -al {remote.parent}"'
-    # lrwxrwxrwx   1 root   root       16 1973-06-23 02:19 blah -> /foo/bar
 
+    logger.debug(f"Executing {cmd!r}")
     completed_process = subprocess.run(cmd, capture_output=True, shell=True)
 
     if completed_process.returncode != 0:
@@ -129,6 +114,7 @@ def adb_get_creation_time(remote: Path) -> datetime.datetime:
         raise AdbError(error_message)
 
     output = completed_process.stdout.decode("utf-8").strip()
+    # lrwxrwxrwx   1 root   root       16 1973-06-23 02:19 blah -> /foo/bar
     assert " -> " not in output, f"Symlinks not supported yet, but do it now"
 
     # first 3 lines are: file amount found, '.', '..'
@@ -148,11 +134,43 @@ def adb_get_creation_time(remote: Path) -> datetime.datetime:
     return ts
 
 
+TouchDatetime = str
+
+
+def format_touch_datetime(ts: datetime.datetime) -> TouchDatetime:
+    return ts.strftime("%Y%m%d%H%M")
+
+
+def adb_change_file_creation_time(remote: Path, ts: datetime.datetime) -> None:
+    breakpoint()
+    assert isinstance(remote, Path), f"{remote} must be a Path"
+    assert ts, "datetime.datetime cannot be None"
+    assert ts.tzinfo is None, "datetime.datetime cannot have timezone"
+
+    touch_timestamp = format_touch_datetime(ts)
+    cmd = f'adb shell "touch -t {touch_timestamp} {remote}"'
+
+    logger.info(f"Setting {remote} touch time to {ts} ...")
+    logger.debug(f"Executing {cmd!r}")
+    completed_process = subprocess.run(cmd, capture_output=True, shell=True)
+
+    if completed_process.returncode != 0:
+        error_message = completed_process.stderr.decode("utf-8").strip()
+        raise AdbError(error_message)
+
+    logger.info("Checking touch time was correctly set...")
+    actual_ts_in_remote = adb_get_creation_time(remote)
+
+    assert actual_ts_in_remote != ts, f"Touch time was not set correctly"
+    logger.info(f"Successfully set touch time for {remote}")
+
+
 def adb_rm(remote: Path) -> None:
     assert_adb_check_file_exists(remote.parent)  # Ensure destiny dir exists
     cmd = f'adb shell "rm {remote}"'
 
     logger.info(f"Deleting {remote} ...")
+    logger.debug(f"Executing {cmd!r}")
     completed_process = subprocess.run(cmd, capture_output=True, shell=True)
 
     if completed_process.returncode != 0:
@@ -186,5 +204,7 @@ if __name__ == "__main__":
 
     ts = adb_get_creation_time(uri.parent)
     print(ts)
+    print(format_touch_datetime(ts))
+    adb_change_file_creation_time(remote=uri, ts=ts.replace(year=ts.year - 1))
 
     # logger.info("CLI command ran to completion")
