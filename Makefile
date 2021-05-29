@@ -58,6 +58,9 @@ move_media_to_working_folder:
 	cp -R "2001-2005_backup/2001-2005/2005-10-07 - Instituto 5 (Viernes)" "to_backup_in_gphotos/2001-2005/"
 	cp -R "2001-2005_backup/2001-2005/2005-10-08 - Barandiaran Goikoa (Sábado)" "to_backup_in_gphotos/2001-2005/"
 
+convert_avi_files_to_mp4:
+	python -m gpy.convert_avi_files_to_mp4
+
 delete_backups:
 	find to_backup_in_gphotos -type f -name "*_original" -delete
 
