@@ -66,7 +66,7 @@ def adb_ls(remote_uri: Path) -> List[Path]:
     return files_or_folders
 
 
-def assert_adb_check_file_exists(remote_file: Path) -> None:
+def adb_file_exists(remote_file: Path) -> bool:
     assert isinstance(remote_file, Path), f"{remote_file} must be a Path"
     remote_dir = remote_file.parent
 
@@ -76,8 +76,41 @@ def assert_adb_check_file_exists(remote_file: Path) -> None:
     file_names = [path.name for path in paths]
     file_name = remote_file.name
 
-    assert file_name in file_names, f"File {remote_file} does not exist"
-    logger.info(f"File {remote_file} exists")
+    file_exists = file_name in file_names
+    if file_exists:
+        logger.info(f"File {remote_file} exists")
+        return True
+    else:
+        logger.info(f"File {remote_file} does not exist")
+        return False
+
+
+def assert_adb_check_file_exists(remote_file: Path) -> None:
+    exists = adb_file_exists(remote_file)
+    assert exists, f"File {remote_file} does not exist"
+
+
+def assert_adb_check_file_does_not_exist(remote_file: Path) -> None:
+    exists = adb_file_exists(remote_file)
+    assert not exists, f"File {remote_file} exists, which is not expected"
+
+
+def adb_push(local: Path, remote: Path) -> None:
+    assert isinstance(local, Path), f"{local} must be a Path"
+    assert isinstance(remote, Path), f"{remote} must be a Path"
+
+    assert local.exists(), f"Local file {local} does not exist"
+    assert_adb_check_file_exists(remote.parent)  # Ensure destiny dir exists
+
+    assert_adb_check_file_exists(remote.parent)  # Ensure destiny dir exists
+
+    cmd = f'adb push "{local}" "{remote}"'
+
+    completed_process = subprocess.run(cmd, capture_output=True, shell=True)
+
+    if completed_process.returncode != 0:
+        error_message = completed_process.stderr.decode("utf-8").strip()
+        raise AdbError(error_message)
 
 
 def adb_rm(remote: Path) -> None:
@@ -110,7 +143,10 @@ if __name__ == "__main__":
     # non_existing_file = remote_uri / "kk.jpg"
     # assert_adb_check_file_exists(remote_file=non_existing_file)
 
+    local = Path("00.png")
     uri = Path("/storage/self/primary/DCIM/Camera/00.png")
+    adb_push(local=local, remote=uri)
     adb_rm(uri)
+    assert_adb_check_file_does_not_exist(remote_file=uri)
 
     # logger.info("CLI command ran to completion")
