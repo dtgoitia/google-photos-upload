@@ -1,3 +1,4 @@
+import datetime
 import logging
 import subprocess
 from pathlib import Path
@@ -113,6 +114,40 @@ def adb_push(local: Path, remote: Path) -> None:
         raise AdbError(error_message)
 
 
+def adb_get_creation_time(remote: Path) -> datetime.datetime:
+    assert isinstance(remote, Path), f"{remote} must be a Path"
+    assert_adb_check_file_exists(remote.parent)  # Ensure destiny dir exists
+    file_name = remote.name
+
+    cmd = f'adb shell "ls -al {remote.parent}"'
+    # lrwxrwxrwx   1 root   root       16 1973-06-23 02:19 blah -> /foo/bar
+
+    completed_process = subprocess.run(cmd, capture_output=True, shell=True)
+
+    if completed_process.returncode != 0:
+        error_message = completed_process.stderr.decode("utf-8").strip()
+        raise AdbError(error_message)
+
+    output = completed_process.stdout.decode("utf-8").strip()
+    assert " -> " not in output, f"Symlinks not supported yet, but do it now"
+
+    # first 3 lines are: file amount found, '.', '..'
+    raw_details_per_file = output.split("\n")[3:]
+
+    raw_details = [raw for raw in raw_details_per_file if file_name in raw]
+    assert len(raw_details) != 0, "Nothing found :S check that"
+    assert len(raw_details) == 1, "More than 1 file found :S check that"
+
+    file_raw_details = raw_details[0]
+
+    _, raw_date, raw_time, file_name = file_raw_details.rsplit(" ", 3)
+    raw_iso_datetime = f"{raw_date}T{raw_time}"
+    ts = datetime.datetime.fromisoformat(raw_iso_datetime)
+    logger.info(f"{remote} creation date is {ts}")
+
+    return ts
+
+
 def adb_rm(remote: Path) -> None:
     assert_adb_check_file_exists(remote.parent)  # Ensure destiny dir exists
     cmd = f'adb shell "rm {remote}"'
@@ -146,7 +181,10 @@ if __name__ == "__main__":
     local = Path("00.png")
     uri = Path("/storage/self/primary/DCIM/Camera/00.png")
     adb_push(local=local, remote=uri)
-    adb_rm(uri)
-    assert_adb_check_file_does_not_exist(remote_file=uri)
+    # adb_rm(uri)
+    # assert_adb_check_file_does_not_exist(remote_file=uri)
+
+    ts = adb_get_creation_time(uri.parent)
+    print(ts)
 
     # logger.info("CLI command ran to completion")
