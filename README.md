@@ -17,7 +17,7 @@ Workflow:
   1. Estimate videos datetime (`make estimate_hardcoded_metadata_for_videos`)
   1. Add google metadata to videos (`make add_hardcoded_metadata_to_videos`) --> videos ready
     - this `touch`es videos with the UTC timestamp to later upload manually
-  1. Upload media by pushing them to Android device (`?`)
+  1. Upload media by pushing them to Android device (`make push_files_to_phone`)
 
 ## Quick start
 

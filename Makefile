@@ -70,6 +70,9 @@ add_hardcoded_metadata_to_videos:
 estimate_hardcoded_metadata_for_videos:
 	python -m gpy.estimate_hardcoded_metadata_for_videos
 
+push_files_to_phone:
+	python -m gpy.push_files_to_phone
+
 delete_backups:
 	find to_backup_in_gphotos -type f -name "*_original" -delete
 

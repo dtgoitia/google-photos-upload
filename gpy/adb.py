@@ -6,13 +6,27 @@ from typing import List
 
 from gpy.log import get_log_format, get_logs_output_path
 
+logger = logging.getLogger(__name__)
+
 DeviceId = str
 
 AQUARIS_PRO_X = "BL013003"
+ANDROID_STORAGE = Path("/storage/self/primary/DCIM/Camera")
 
 
 class AdbError(Exception):
     ...
+
+
+def adb_mkdir(remote: Path) -> None:
+    cmd = f'adb shell "mkdir {remote}"'
+    logger.info(f"Creating the directory {remote}...")
+    logger.debug(f"Executing {cmd!r}")
+    completed_process = subprocess.run(cmd, capture_output=True, shell=True)
+
+    if completed_process.returncode != 0:
+        error_message = completed_process.stderr.decode("utf-8").strip()
+        raise AdbError(error_message)
 
 
 def assert_is_device_connected(device_id: DeviceId = AQUARIS_PRO_X) -> None:
@@ -84,9 +98,13 @@ def adb_push(local: Path, remote: Path) -> None:
     assert isinstance(remote, Path), f"{remote} must be a Path"
 
     assert local.exists(), f"Local file {local} does not exist"
-    assert_adb_check_file_exists(remote.parent)  # Ensure destiny dir exists
-
-    assert_adb_check_file_exists(remote.parent)  # Ensure destiny dir exists
+    # Ensure destiny dir exists
+    try:
+        assert_adb_check_file_exists(remote.parent)
+    except AssertionError:
+        adb_mkdir(remote.parent)
+    # Double check
+    assert_adb_check_file_exists(remote.parent)
 
     # adb push "local/file.jpg" "remote/file.jpg"
     cmd = f'adb push "{local}" "{remote}"'
