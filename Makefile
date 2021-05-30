@@ -64,6 +64,12 @@ convert_avi_files_to_mp4:
 add_metadata_to_pictures:
 	python -m gpy.add_metadata_to_pictures
 
+add_hardcoded_metadata_to_videos:
+	python -m gpy.add_hardcoded_metadata_to_videos
+
+estimate_hardcoded_metadata_for_videos:
+	python -m gpy.estimate_hardcoded_metadata_for_videos
+
 delete_backups:
 	find to_backup_in_gphotos -type f -name "*_original" -delete
 

@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import attr
 import cattr
@@ -178,23 +178,6 @@ class MediaItem:
     contributor_info: Optional[JsonDict] = None
     description: Optional[str] = None
 
-    # def to_json(self) -> JsonDict:
-    #     if self.contributor_info:
-    #         contributor_info = self.contributor_info.to_json()
-    #     else:
-    #         contributor_info = None
-
-    #     return {
-    #         "id": self.id,
-    #         "productUrl": self.product_url,
-    #         "baseUrl": self.base_url,
-    #         "mimeType": self.mime_type,
-    #         "mediaMetadata": self.media_metadata.to_json(),
-    #         "filename": self.filename,
-    #         "contributorInfo": contributor_info,
-    #         "description": self.description,
-    #     }
-
 
 def structure_media_item(raw: JsonDict, _: Any) -> MediaItem:
     media_item = MediaItem(
@@ -228,3 +211,53 @@ def unstructure_media_item(media_item: MediaItem) -> JsonDict:
 
 converter.register_structure_hook(MediaItem, structure_media_item)
 converter.register_unstructure_hook(MediaItem, unstructure_media_item)
+
+
+@attr.s(auto_attribs=True, frozen=True)
+class FileReportFromTable:
+    """Represents a row in the table"""
+
+    file_id: FileId
+    path: Path
+    filename_date: Optional[datetime]
+    metadata_date: Optional[datetime]
+    dates_match: bool
+    gphotos_compatible_metadata: Optional[datetime]
+    ready_to_upload: bool
+    uploaded: bool
+    add_google_timestamp: bool
+    convert_to_mp4: bool
+    upload_in_next_reconcile: bool
+
+    def to_tabular(self) -> List[str]:
+        # order must match with self.table_headers()
+        row = [
+            self.file_id,
+            self.filename_date,
+            self.metadata_date,
+            self.dates_match,
+            self.gphotos_compatible_metadata,
+            self.ready_to_upload,
+            self.add_google_timestamp,
+            self.convert_to_mp4,
+            self.upload_in_next_reconcile,
+            self.path,
+            self.uploaded,
+        ]
+        return row
+
+    @staticmethod
+    def table_headers() -> List[str]:
+        return [
+            "file_id",
+            "filename_date",
+            "metadata_date",
+            "dates_match",
+            "gphotos_compatible_metadata",
+            "ready_to_upload",
+            "add_google_timestamp",
+            "convert_to_mp4",
+            "upload_in_next_reconcile",
+            "path",
+            "uploaded",
+        ]
