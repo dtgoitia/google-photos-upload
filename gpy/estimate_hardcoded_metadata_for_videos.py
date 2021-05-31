@@ -173,10 +173,12 @@ def estimate_datetime_for_videos_in_folder(table: List[FileReportFromTable]) -> 
                 updated_video = add_date_to_video(video, video_datetime)
 
                 # Add updated video to table in the right place
-                table_index = (last_picture_index or -1) + 1 + video_index
-                # Hack explanation: the -1 is because if the are no pictures before the
-                # video, you need table_index to be 0, and putting a -1 is the way to
-                # fix this issue
+                if last_picture_index is None:
+                    # Hack explanation: the -1 is because if the are no pictures before
+                    # the video, you need table_index to be 0, and putting a -1 is the
+                    # way to fix this issue
+                    last_picture_index = -1
+                table_index = last_picture_index + 1 + video_index
 
                 updated_table[table_index] = updated_video
 
@@ -229,8 +231,8 @@ def estimate_hardcoded_metadata_for_videos_across_all_folders() -> None:
     updated_table = concatenate_subtables(updated_tables_per_dir)
 
     # NOTE: for debugging
-    # output_path = TABLE_AS_STRING_PATH.parent / f"{TABLE_AS_STRING_PATH.name}_estimated"
-    output_path = TABLE_AS_STRING_PATH
+    output_path = TABLE_AS_STRING_PATH.parent / f"{TABLE_AS_STRING_PATH.name}_estimated"
+    # output_path = TABLE_AS_STRING_PATH
     updated_table_as_str = convert_to_local_plain_text_spreadsheet(updated_table)
     save_table(path=output_path, data=updated_table_as_str)
 
