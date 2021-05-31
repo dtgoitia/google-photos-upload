@@ -46,7 +46,9 @@ def add_hardcoded_metadata_to_videos() -> None:
         assert is_mp4, f"{video_path} is not mp4, please convert all videos files first"
 
     logger.info(f"Reading table at {TABLE_AS_STRING_PATH}")
-    table = read_table(path=TABLE_AS_STRING_PATH)
+    # table_path = TABLE_AS_STRING_PATH
+    table_path = TABLE_AS_STRING_PATH.parent / f"{TABLE_AS_STRING_PATH.name}_estimated"
+    table = read_table(path=table_path)
     logger.info("Indexing table...")
     indexed_table = {file.path: file for file in table}
     logger.info("Table successfully indexed")
