@@ -80,7 +80,7 @@ def estimate_video_date_from_dir_name(row: FileReportFromTable) -> datetime:
     year = int(matches.group(1))
     month = int(matches.group(2))
     day = int(matches.group(3))
-    estimated_utc_datetime = datetime(year, month, day, 8, 0, 0, tzinfo=pytz.utc)
+    estimated_utc_datetime = datetime(year, month, day, 3, 0, 0, tzinfo=pytz.utc)
     estimated_datetime = estimated_utc_datetime.astimezone(DEFAULT_TZ)
     return estimated_datetime
 
